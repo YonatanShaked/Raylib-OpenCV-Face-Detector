@@ -102,26 +102,10 @@ int main(int argc, char** argv)
           {
             const FacePose& fp = fr.faces[fi];
 
-            float min_x = fp.landmarks_68[0].x;
-            float max_x = fp.landmarks_68[0].x;
-            float min_y = fp.landmarks_68[0].y;
-            float max_y = fp.landmarks_68[0].y;
+            Vector2 p1 = rlft::MapToWindow({(float)fp.bbox.x, (float)fp.bbox.y}, scale, off_x, off_y);
+            Vector2 p2 = rlft::MapToWindow({(float)(fp.bbox.x + fp.bbox.width), (float)(fp.bbox.y + fp.bbox.height)}, scale, off_x, off_y);
 
-            for (size_t i = 1; i < fp.landmarks_68.size(); i++)
-            {
-              if (fp.landmarks_68[i].x < min_x)
-                min_x = fp.landmarks_68[i].x;
-              if (fp.landmarks_68[i].x > max_x)
-                max_x = fp.landmarks_68[i].x;
-              if (fp.landmarks_68[i].y < min_y)
-                min_y = fp.landmarks_68[i].y;
-              if (fp.landmarks_68[i].y > max_y)
-                max_y = fp.landmarks_68[i].y;
-            }
-
-            Vector2 p1 = rlft::MapToWindow({min_x, min_y}, scale, off_x, off_y);
-            Vector2 p2 = rlft::MapToWindow({max_x, max_y}, scale, off_x, off_y);
-
+            DrawRectangleLines((int)p1.x, (int)p1.y, (int)(p2.x - p1.x), (int)(p2.y - p1.y), RED);
             DrawRectangleLines((int)p1.x, (int)p1.y, (int)(p2.x - p1.x), (int)(p2.y - p1.y), RED);
 
             for (size_t i = 0; i < fp.landmarks_68.size(); i++)

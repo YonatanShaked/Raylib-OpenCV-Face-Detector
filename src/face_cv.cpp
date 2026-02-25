@@ -133,6 +133,7 @@ FaceResult FaceCV::Process(const cv::Mat& bgr_frame)
       continue;
 
     FacePose pose;
+    pose.bbox = faces[i];
     pose.landmarks_68 = landmarks[i];
     pose.axis_points.clear();
     pose.rvec = cv::Vec3d(0.0, 0.0, 0.0);

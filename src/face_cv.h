@@ -8,6 +8,7 @@
 
 struct FacePose
 {
+  cv::Rect bbox;
   std::vector<cv::Point2f> landmarks_68;
   std::vector<cv::Point2f> axis_points;
   cv::Vec3d rvec;
