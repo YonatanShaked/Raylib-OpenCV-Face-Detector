@@ -9,7 +9,7 @@ namespace rlft
 {
   std::filesystem::path AssetPath(const std::filesystem::path& rel);
 
-  void ComputeLetterbox(int win_w, int win_h, int img_w, int img_h, float& out_scale, float& out_off_x, float& out_off_y, float& out_draw_w, float& out_draw_h);
+  void DrawWebcamTexture(Texture2D tex, int img_w, int img_h, float& scale, float& off_x, float& off_y, float& draw_w, float& draw_h);
   Vector2 MapToWindow(const cv::Point2f& p, float scale, float off_x, float off_y);
 
   Camera3D MakeOpenCVCamera(const cv::Mat& K, int img_w, int img_h);

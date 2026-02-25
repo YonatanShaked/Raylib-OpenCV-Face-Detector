@@ -65,37 +65,8 @@ int main(int argc, char** argv)
       cv::cvtColor(frame_bgr, frame_rgba, cv::COLOR_BGR2RGBA);
       UpdateTexture(tex, frame_rgba.data);
 
-      int win_w = GetScreenWidth();
-      int win_h = GetScreenHeight();
-
-      float scale = 1.0f;
-      float off_x = 0.0f;
-      float off_y = 0.0f;
-      float draw_w = (float)img_w;
-      float draw_h = (float)img_h;
-
-      rlft::ComputeLetterbox(win_w, win_h, img_w, img_h, scale, off_x, off_y, draw_w, draw_h);
-
-      BeginDrawing();
-      ClearBackground(BLACK);
-
-      Rectangle src;
-      src.x = 0.0f;
-      src.y = 0.0f;
-      src.width = (float)img_w;
-      src.height = (float)img_h;
-
-      Rectangle dst;
-      dst.x = off_x;
-      dst.y = off_y;
-      dst.width = draw_w;
-      dst.height = draw_h;
-
-      Vector2 origin;
-      origin.x = 0.0f;
-      origin.y = 0.0f;
-
-      DrawTexturePro(tex, src, dst, origin, 0.0f, WHITE);
+      float scale, off_x, off_y, draw_w, draw_h;
+      rlft::DrawWebcamTexture(tex, img_w, img_h, scale, off_x, off_y, draw_w, draw_h);
 
       if (do_cv)
       {
@@ -122,7 +93,7 @@ int main(int argc, char** argv)
 
         EndMode3D();
 
-        rlViewport(0, 0, win_w, win_h);
+        rlViewport(0, 0, GetScreenWidth(), GetScreenHeight());
         EndScissorMode();
 
         if (show_debug)

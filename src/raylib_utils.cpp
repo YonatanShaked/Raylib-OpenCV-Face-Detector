@@ -15,15 +15,45 @@ namespace rlft
     return base / "assets" / rel;
   }
 
-  void ComputeLetterbox(int win_w, int win_h, int img_w, int img_h, float& out_scale, float& out_off_x, float& out_off_y, float& out_draw_w, float& out_draw_h)
+  void DrawWebcamTexture(Texture2D tex, int img_w, int img_h, float& scale, float& off_x, float& off_y, float& draw_w, float& draw_h)
   {
+    int win_w = GetScreenWidth();
+    int win_h = GetScreenHeight();
+
+    scale = 1.0f;
+    off_x = 0.0f;
+    off_y = 0.0f;
+    draw_w = (float)img_w;
+    draw_h = (float)img_h;
+
     float sx = (float)win_w / (float)img_w;
     float sy = (float)win_h / (float)img_h;
-    out_scale = (sx < sy) ? sx : sy;
-    out_draw_w = (float)img_w * out_scale;
-    out_draw_h = (float)img_h * out_scale;
-    out_off_x = ((float)win_w - out_draw_w) * 0.5f;
-    out_off_y = ((float)win_h - out_draw_h) * 0.5f;
+    scale = (sx < sy) ? sx : sy;
+    draw_w = (float)img_w * scale;
+    draw_h = (float)img_h * scale;
+    off_x = ((float)win_w - draw_w) * 0.5f;
+    off_y = ((float)win_h - draw_h) * 0.5f;
+
+    BeginDrawing();
+    ClearBackground(BLACK);
+
+    Rectangle src;
+    src.x = 0.0f;
+    src.y = 0.0f;
+    src.width = (float)img_w;
+    src.height = (float)img_h;
+
+    Rectangle dst;
+    dst.x = off_x;
+    dst.y = off_y;
+    dst.width = draw_w;
+    dst.height = draw_h;
+
+    Vector2 origin;
+    origin.x = 0.0f;
+    origin.y = 0.0f;
+
+    DrawTexturePro(tex, src, dst, origin, 0.0f, WHITE);
   }
 
   Vector2 MapToWindow(const cv::Point2f& p, float scale, float off_x, float off_y)
