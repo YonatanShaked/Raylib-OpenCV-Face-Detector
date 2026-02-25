@@ -65,11 +65,6 @@ int main(int argc, char** argv)
       cv::cvtColor(frame_bgr, frame_rgba, cv::COLOR_BGR2RGBA);
       UpdateTexture(tex, frame_rgba.data);
 
-      if (do_cv)
-        fr = face.Process(frame_bgr);
-      else
-        fr.faces.clear();
-
       int win_w = GetScreenWidth();
       int win_h = GetScreenHeight();
 
@@ -104,6 +99,8 @@ int main(int argc, char** argv)
 
       if (do_cv)
       {
+        fr = face.Process(frame_bgr);
+
         BeginScissorMode((int)off_x, (int)off_y, (int)draw_w, (int)draw_h);
         rlViewport((int)off_x, (int)off_y, (int)draw_w, (int)draw_h);
 
@@ -115,7 +112,13 @@ int main(int argc, char** argv)
         UpdateLightValues(light_shader, light);
 
         for (size_t fi = 0; fi < fr.faces.size(); fi++)
-          rlft::DrawGlassesAtPoseLit(glasses_model, fr.faces[fi].rvec, fr.faces[fi].tvec);
+        {
+          const FacePose& fp = fr.faces[fi];
+          rlft::DrawGlassesAtPoseLit(glasses_model, fp.rvec, fp.tvec);
+
+          if (show_debug)
+            rlft::DrawAxisBarsAtPose(fp.rvec, fp.tvec, 15.0f, 1.0f);
+        }
 
         EndMode3D();
 
@@ -127,8 +130,6 @@ int main(int argc, char** argv)
           for (size_t fi = 0; fi < fr.faces.size(); fi++)
           {
             const FacePose& fp = fr.faces[fi];
-
-            rlft::DrawAxisBarsAtPose(fp.rvec, fp.tvec, 15.0f, 1.0f);
 
             float min_x = fp.landmarks_68[0].x;
             float max_x = fp.landmarks_68[0].x;
