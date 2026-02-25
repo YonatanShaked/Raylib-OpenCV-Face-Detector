@@ -25,6 +25,8 @@ compile_commands.json
 *.swo
 *.user
 
+.cache
+
 # OS junk
 .DS_Store
 Thumbs.db

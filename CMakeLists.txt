@@ -3,14 +3,9 @@ project(raylib_opencv_facemark LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(OpenCV REQUIRED)
-
-find_package(raylib QUIET)
-if (NOT raylib_FOUND)
-  find_package(PkgConfig REQUIRED)
-  pkg_check_modules(RAYLIB REQUIRED raylib)
-endif()
 
 add_executable(rl_face_tracker
   src/main.cpp
@@ -19,16 +14,22 @@ add_executable(rl_face_tracker
   src/raylib_utils.cpp
 )
 
-target_include_directories(rl_face_tracker PRIVATE
-  ${OpenCV_INCLUDE_DIRS}
-)
-
-if (raylib_FOUND)
-  target_link_libraries(rl_face_tracker PRIVATE raylib ${OpenCV_LIBS})
+if (TARGET opencv_core)
+  target_link_libraries(rl_face_tracker PRIVATE opencv_core opencv_imgproc opencv_highgui opencv_videoio opencv_objdetect opencv_face)
+elseif (TARGET OpenCV::OpenCV)
+  target_link_libraries(rl_face_tracker PRIVATE OpenCV::OpenCV)
 else()
-  target_include_directories(rl_face_tracker PRIVATE ${RAYLIB_INCLUDE_DIRS})
-  target_link_directories(rl_face_tracker PRIVATE ${RAYLIB_LIBRARY_DIRS})
-  target_link_libraries(rl_face_tracker PRIVATE ${RAYLIB_LIBRARIES} ${OpenCV_LIBS})
+  target_include_directories(rl_face_tracker PRIVATE ${OpenCV_INCLUDE_DIRS})
+  target_link_libraries(rl_face_tracker PRIVATE ${OpenCV_LIBS})
+endif()
+
+find_package(raylib QUIET)
+if (raylib_FOUND)
+  target_link_libraries(rl_face_tracker PRIVATE raylib)
+else()
+  find_package(PkgConfig REQUIRED)
+  pkg_check_modules(RAYLIB REQUIRED IMPORTED_TARGET raylib)
+  target_link_libraries(rl_face_tracker PRIVATE PkgConfig::RAYLIB)
 endif()
 
 if (UNIX)
