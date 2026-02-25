@@ -1,106 +1,16 @@
 #include "camera_handler.h"
 #include "face_cv.h"
+#include "raylib_utils.h"
+#include "rlights.h"
+#include <filesystem>
 #include <string>
 #include <raylib.h>
 #include <rlgl.h>
 
-#define RLIGHTS_IMPLEMENTATION
-#include "rlights.h"
-
-static void ComputeLetterbox(int win_w, int win_h, int img_w, int img_h, float& out_scale, float& out_off_x, float& out_off_y, float& out_draw_w, float& out_draw_h)
-{
-  float sx = (float)win_w / (float)img_w;
-  float sy = (float)win_h / (float)img_h;
-  out_scale = (sx < sy) ? sx : sy;
-  out_draw_w = (float)img_w * out_scale;
-  out_draw_h = (float)img_h * out_scale;
-  out_off_x = ((float)win_w - out_draw_w) * 0.5f;
-  out_off_y = ((float)win_h - out_draw_h) * 0.5f;
-}
-
-static Vector2 MapToWindow(const cv::Point2f& p, float scale, float off_x, float off_y)
-{
-  Vector2 v;
-  v.x = off_x + p.x * scale;
-  v.y = off_y + p.y * scale;
-  return v;
-}
-
-static Camera3D MakeOpenCVCamera(const cv::Mat& K, int img_w, int img_h)
-{
-  double fy = K.at<double>(1, 1);
-  double fovy = 2.0 * atan((double)img_h / (2.0 * fy));
-  Camera3D cam;
-  cam.position = (Vector3){0.0f, 0.0f, 0.0f};
-  cam.target = (Vector3){0.0f, 0.0f, 1.0f};
-  cam.up = (Vector3){0.0f, -1.0f, 0.0f};
-  cam.fovy = (float)(fovy * 180.0 / 3.14159265358979323846);
-  cam.projection = CAMERA_PERSPECTIVE;
-  return cam;
-}
-
-static bool RvecToAxisAngle(const cv::Vec3d& rvec, Vector3& out_axis, float& out_angle_deg)
-{
-  double ax = rvec[0];
-  double ay = rvec[1];
-  double az = rvec[2];
-  double angle = sqrt(ax * ax + ay * ay + az * az);
-  if (angle < 1e-9)
-    return false;
-  out_axis = (Vector3){(float)(ax / angle), (float)(ay / angle), (float)(az / angle)};
-  out_angle_deg = (float)(angle * 180.0 / 3.14159265358979323846);
-  return true;
-}
-
-static void DrawAxisBarsAtPose(const cv::Vec3d& rvec, const cv::Vec3d& tvec, float len, float thick)
-{
-  Vector3 axis;
-  float ang_deg = 0.0f;
-
-  rlPushMatrix();
-  rlTranslatef((float)tvec[0], (float)tvec[1], (float)tvec[2]);
-
-  if (RvecToAxisAngle(rvec, axis, ang_deg))
-    rlRotatef(ang_deg, axis.x, axis.y, axis.z);
-
-  DrawCubeV((Vector3){len * 0.5f, 0.0f, 0.0f}, (Vector3){len, thick, thick}, RED);
-  DrawCubeV((Vector3){0.0f, len * 0.5f, 0.0f}, (Vector3){thick, len, thick}, GREEN);
-  DrawCubeV((Vector3){0.0f, 0.0f, len * 0.5f}, (Vector3){thick, thick, len}, BLUE);
-
-  rlPopMatrix();
-}
-
-static void DrawGlassesAtPoseLit(Model& glasses, const cv::Vec3d& rvec, const cv::Vec3d& tvec)
-{
-  Vector3 axis;
-  float ang_deg = 0.0f;
-
-  rlPushMatrix();
-  rlTranslatef((float)tvec[0], (float)tvec[1], (float)tvec[2]);
-
-  if (RvecToAxisAngle(rvec, axis, ang_deg))
-    rlRotatef(ang_deg, axis.x, axis.y, axis.z);
-
-  rlRotatef(90.0f, 1.0f, 0.0f, 0.0f);
-  rlRotatef(180.0f, 0.0f, 1.0f, 0.0f);
-
-  glasses.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = (Color){15, 25, 70, 255};
-
-  float s = 0.2f;
-  DrawModel(glasses, (Vector3){0.0f, 0.0f, 0.0f}, s, WHITE);
-
-  rlPopMatrix();
-}
-
-static const char* OnOffText(bool v)
-{
-  return v ? "ON" : "OFF";
-}
-
 int main(int argc, char** argv)
 {
-  std::string cascade_path = "assets/haarcascade_frontalface_default.xml";
-  std::string lbf_path = "assets/lbfmodel.yaml";
+  std::filesystem::path cascade_path = rlft::AssetPath("haarcascade_frontalface_default.xml");
+  std::filesystem::path lbf_path = rlft::AssetPath("lbfmodel.yaml");
 
   CameraHandler cam(0, 1280, 720, 30);
   if (!cam.IsOpened())
@@ -109,19 +19,21 @@ int main(int argc, char** argv)
   int img_w = cam.Width();
   int img_h = cam.Height();
 
-  FaceCV face(cascade_path, lbf_path, img_w, img_h, 5, 1, 1);
+  FaceCV face(cascade_path.string(), lbf_path.string(), img_w, img_h, 5, 1, 1);
 
   SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-  InitWindow(img_w, img_h, "raylib + opencv facemark");
+  InitWindow(img_w, img_h, "Raylib Face Tracker");
   SetTargetFPS(60);
 
   Image img = GenImageColor(img_w, img_h, BLACK);
   Texture2D tex = LoadTextureFromImage(img);
   UnloadImage(img);
 
-  Model glasses_model = LoadModel("assets/glasses.obj");
+  Model glasses_model = LoadModel(rlft::AssetPath("glasses.obj").string().c_str());
 
-  Shader light_shader = LoadShader("assets/shaders/lighting.vs", "assets/shaders/lighting.fs");
+  Shader light_shader = LoadShader(
+    rlft::AssetPath(std::filesystem::path("shaders") / "lighting.vs").string().c_str(),
+    rlft::AssetPath(std::filesystem::path("shaders") / "lighting.fs").string().c_str());
 
   for (int i = 0; i < glasses_model.materialCount; i++)
     glasses_model.materials[i].shader = light_shader;
@@ -135,7 +47,7 @@ int main(int argc, char** argv)
   cv::Mat frame_bgr;
   cv::Mat frame_rgba;
 
-  Camera3D cv_cam = MakeOpenCVCamera(face.CameraMatrix(), img_w, img_h);
+  Camera3D cv_cam = rlft::MakeOpenCVCamera(face.CameraMatrix(), img_w, img_h);
 
   bool show_debug = false;
   bool do_cv = true;
@@ -170,7 +82,7 @@ int main(int argc, char** argv)
     float draw_w = (float)img_w;
     float draw_h = (float)img_h;
 
-    ComputeLetterbox(win_w, win_h, img_w, img_h, scale, off_x, off_y, draw_w, draw_h);
+    rlft::ComputeLetterbox(win_w, win_h, img_w, img_h, scale, off_x, off_y, draw_w, draw_h);
 
     BeginDrawing();
     ClearBackground(BLACK);
@@ -206,7 +118,7 @@ int main(int argc, char** argv)
       UpdateLightValues(light_shader, light);
 
       for (size_t fi = 0; fi < fr.faces.size(); fi++)
-        DrawGlassesAtPoseLit(glasses_model, fr.faces[fi].rvec, fr.faces[fi].tvec);
+        rlft::DrawGlassesAtPoseLit(glasses_model, fr.faces[fi].rvec, fr.faces[fi].tvec);
 
       EndMode3D();
 
@@ -219,7 +131,7 @@ int main(int argc, char** argv)
         {
           const FacePose& fp = fr.faces[fi];
 
-          DrawAxisBarsAtPose(fp.rvec, fp.tvec, 15.0f, 1.0f);
+          rlft::DrawAxisBarsAtPose(fp.rvec, fp.tvec, 15.0f, 1.0f);
 
           float min_x = fp.landmarks_68[0].x;
           float max_x = fp.landmarks_68[0].x;
@@ -238,23 +150,26 @@ int main(int argc, char** argv)
               max_y = fp.landmarks_68[i].y;
           }
 
-          Vector2 p1 = MapToWindow({min_x, min_y}, scale, off_x, off_y);
-          Vector2 p2 = MapToWindow({max_x, max_y}, scale, off_x, off_y);
+          Vector2 p1 = rlft::MapToWindow({min_x, min_y}, scale, off_x, off_y);
+          Vector2 p2 = rlft::MapToWindow({max_x, max_y}, scale, off_x, off_y);
 
           DrawRectangleLines((int)p1.x, (int)p1.y, (int)(p2.x - p1.x), (int)(p2.y - p1.y), RED);
 
           for (size_t i = 0; i < fp.landmarks_68.size(); i++)
           {
-            Vector2 p = MapToWindow(fp.landmarks_68[i], scale, off_x, off_y);
+            Vector2 p = rlft::MapToWindow(fp.landmarks_68[i], scale, off_x, off_y);
             DrawCircleV(p, 2.0f, YELLOW);
           }
         }
       }
     }
+    
+    std::string debug_text = "Press 1 to toggle debug info (" + std::string(show_debug ? "ON" : "OFF") + ")";
+    std::string cv_text = "Press 2 to toggle cv computations (" + std::string(do_cv ? "ON" : "OFF") + ")";
 
-    DrawText(TextFormat("Press 1 to toggle debug info (%s)", OnOffText(show_debug)), 10, 10, 20, GREEN);
-    DrawText(TextFormat("Press 2 to toggle cv computations (%s)", OnOffText(do_cv)), 10, 35, 20, GREEN);
-
+    DrawText(debug_text.c_str(), 10, 10, 20, GREEN);
+    DrawText(cv_text.c_str(), 10, 35, 20, GREEN);
+    
     EndDrawing();
   }
 
