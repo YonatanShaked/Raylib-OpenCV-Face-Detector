@@ -64,99 +64,99 @@ int main(int argc, char** argv)
     {
       cv::cvtColor(frame_bgr, frame_rgba, cv::COLOR_BGR2RGBA);
       UpdateTexture(tex, frame_rgba.data);
-    }
 
-    if (do_cv)
-      fr = face.Process(frame_bgr);
-    else
-      fr.faces.clear();
+      if (do_cv)
+        fr = face.Process(frame_bgr);
+      else
+        fr.faces.clear();
 
-    int win_w = GetScreenWidth();
-    int win_h = GetScreenHeight();
+      int win_w = GetScreenWidth();
+      int win_h = GetScreenHeight();
 
-    float scale = 1.0f;
-    float off_x = 0.0f;
-    float off_y = 0.0f;
-    float draw_w = (float)img_w;
-    float draw_h = (float)img_h;
+      float scale = 1.0f;
+      float off_x = 0.0f;
+      float off_y = 0.0f;
+      float draw_w = (float)img_w;
+      float draw_h = (float)img_h;
 
-    rlft::ComputeLetterbox(win_w, win_h, img_w, img_h, scale, off_x, off_y, draw_w, draw_h);
+      rlft::ComputeLetterbox(win_w, win_h, img_w, img_h, scale, off_x, off_y, draw_w, draw_h);
 
-    BeginDrawing();
-    ClearBackground(BLACK);
+      BeginDrawing();
+      ClearBackground(BLACK);
 
-    Rectangle src;
-    src.x = 0.0f;
-    src.y = 0.0f;
-    src.width = (float)img_w;
-    src.height = (float)img_h;
+      Rectangle src;
+      src.x = 0.0f;
+      src.y = 0.0f;
+      src.width = (float)img_w;
+      src.height = (float)img_h;
 
-    Rectangle dst;
-    dst.x = off_x;
-    dst.y = off_y;
-    dst.width = draw_w;
-    dst.height = draw_h;
+      Rectangle dst;
+      dst.x = off_x;
+      dst.y = off_y;
+      dst.width = draw_w;
+      dst.height = draw_h;
 
-    Vector2 origin;
-    origin.x = 0.0f;
-    origin.y = 0.0f;
+      Vector2 origin;
+      origin.x = 0.0f;
+      origin.y = 0.0f;
 
-    DrawTexturePro(tex, src, dst, origin, 0.0f, WHITE);
+      DrawTexturePro(tex, src, dst, origin, 0.0f, WHITE);
 
-    if (do_cv)
-    {
-      BeginScissorMode((int)off_x, (int)off_y, (int)draw_w, (int)draw_h);
-      rlViewport((int)off_x, (int)off_y, (int)draw_w, (int)draw_h);
-
-      BeginMode3D(cv_cam);
-
-      Vector3 vp = cv_cam.position;
-      SetShaderValue(light_shader, loc_view_pos, &vp.x, SHADER_UNIFORM_VEC3);
-
-      UpdateLightValues(light_shader, light);
-
-      for (size_t fi = 0; fi < fr.faces.size(); fi++)
-        rlft::DrawGlassesAtPoseLit(glasses_model, fr.faces[fi].rvec, fr.faces[fi].tvec);
-
-      EndMode3D();
-
-      rlViewport(0, 0, win_w, win_h);
-      EndScissorMode();
-
-      if (show_debug)
+      if (do_cv)
       {
+        BeginScissorMode((int)off_x, (int)off_y, (int)draw_w, (int)draw_h);
+        rlViewport((int)off_x, (int)off_y, (int)draw_w, (int)draw_h);
+
+        BeginMode3D(cv_cam);
+
+        Vector3 vp = cv_cam.position;
+        SetShaderValue(light_shader, loc_view_pos, &vp.x, SHADER_UNIFORM_VEC3);
+
+        UpdateLightValues(light_shader, light);
+
         for (size_t fi = 0; fi < fr.faces.size(); fi++)
+          rlft::DrawGlassesAtPoseLit(glasses_model, fr.faces[fi].rvec, fr.faces[fi].tvec);
+
+        EndMode3D();
+
+        rlViewport(0, 0, win_w, win_h);
+        EndScissorMode();
+
+        if (show_debug)
         {
-          const FacePose& fp = fr.faces[fi];
-
-          rlft::DrawAxisBarsAtPose(fp.rvec, fp.tvec, 15.0f, 1.0f);
-
-          float min_x = fp.landmarks_68[0].x;
-          float max_x = fp.landmarks_68[0].x;
-          float min_y = fp.landmarks_68[0].y;
-          float max_y = fp.landmarks_68[0].y;
-
-          for (size_t i = 1; i < fp.landmarks_68.size(); i++)
+          for (size_t fi = 0; fi < fr.faces.size(); fi++)
           {
-            if (fp.landmarks_68[i].x < min_x)
-              min_x = fp.landmarks_68[i].x;
-            if (fp.landmarks_68[i].x > max_x)
-              max_x = fp.landmarks_68[i].x;
-            if (fp.landmarks_68[i].y < min_y)
-              min_y = fp.landmarks_68[i].y;
-            if (fp.landmarks_68[i].y > max_y)
-              max_y = fp.landmarks_68[i].y;
-          }
+            const FacePose& fp = fr.faces[fi];
 
-          Vector2 p1 = rlft::MapToWindow({min_x, min_y}, scale, off_x, off_y);
-          Vector2 p2 = rlft::MapToWindow({max_x, max_y}, scale, off_x, off_y);
+            rlft::DrawAxisBarsAtPose(fp.rvec, fp.tvec, 15.0f, 1.0f);
 
-          DrawRectangleLines((int)p1.x, (int)p1.y, (int)(p2.x - p1.x), (int)(p2.y - p1.y), RED);
+            float min_x = fp.landmarks_68[0].x;
+            float max_x = fp.landmarks_68[0].x;
+            float min_y = fp.landmarks_68[0].y;
+            float max_y = fp.landmarks_68[0].y;
 
-          for (size_t i = 0; i < fp.landmarks_68.size(); i++)
-          {
-            Vector2 p = rlft::MapToWindow(fp.landmarks_68[i], scale, off_x, off_y);
-            DrawCircleV(p, 2.0f, YELLOW);
+            for (size_t i = 1; i < fp.landmarks_68.size(); i++)
+            {
+              if (fp.landmarks_68[i].x < min_x)
+                min_x = fp.landmarks_68[i].x;
+              if (fp.landmarks_68[i].x > max_x)
+                max_x = fp.landmarks_68[i].x;
+              if (fp.landmarks_68[i].y < min_y)
+                min_y = fp.landmarks_68[i].y;
+              if (fp.landmarks_68[i].y > max_y)
+                max_y = fp.landmarks_68[i].y;
+            }
+
+            Vector2 p1 = rlft::MapToWindow({min_x, min_y}, scale, off_x, off_y);
+            Vector2 p2 = rlft::MapToWindow({max_x, max_y}, scale, off_x, off_y);
+
+            DrawRectangleLines((int)p1.x, (int)p1.y, (int)(p2.x - p1.x), (int)(p2.y - p1.y), RED);
+
+            for (size_t i = 0; i < fp.landmarks_68.size(); i++)
+            {
+              Vector2 p = rlft::MapToWindow(fp.landmarks_68[i], scale, off_x, off_y);
+              DrawCircleV(p, 2.0f, YELLOW);
+            }
           }
         }
       }
