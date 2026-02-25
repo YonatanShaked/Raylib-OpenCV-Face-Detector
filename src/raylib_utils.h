@@ -19,6 +19,6 @@ namespace rlft
 
   void DrawAxisBarsAtPose(const cv::Vec3d& rvec, const cv::Vec3d& tvec, float len, float thick);
   void DrawGlassesAtPoseLit(Model& glasses, const cv::Vec3d& rvec, const cv::Vec3d& tvec);
-}
+} // namespace rlft
 
 #endif // RAYLIB_UTILS_H

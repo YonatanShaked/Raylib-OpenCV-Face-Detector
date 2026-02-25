@@ -31,9 +31,7 @@ int main(int argc, char** argv)
 
   Model glasses_model = LoadModel(rlft::AssetPath("glasses.obj").string().c_str());
 
-  Shader light_shader = LoadShader(
-    rlft::AssetPath(std::filesystem::path("shaders") / "lighting.vs").string().c_str(),
-    rlft::AssetPath(std::filesystem::path("shaders") / "lighting.fs").string().c_str());
+  Shader light_shader = LoadShader(rlft::AssetPath(std::filesystem::path("shaders") / "lighting.vs").string().c_str(), rlft::AssetPath(std::filesystem::path("shaders") / "lighting.fs").string().c_str());
 
   for (int i = 0; i < glasses_model.materialCount; i++)
     glasses_model.materials[i].shader = light_shader;
@@ -163,13 +161,13 @@ int main(int argc, char** argv)
         }
       }
     }
-    
+
     std::string debug_text = "Press 1 to toggle debug info (" + std::string(show_debug ? "ON" : "OFF") + ")";
     std::string cv_text = "Press 2 to toggle cv computations (" + std::string(do_cv ? "ON" : "OFF") + ")";
 
     DrawText(debug_text.c_str(), 10, 10, 20, GREEN);
     DrawText(cv_text.c_str(), 10, 35, 20, GREEN);
-    
+
     EndDrawing();
   }
 

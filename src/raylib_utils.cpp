@@ -105,4 +105,4 @@ namespace rlft
 
     rlPopMatrix();
   }
-}
+} // namespace rlft
