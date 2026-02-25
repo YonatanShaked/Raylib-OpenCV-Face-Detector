@@ -7,7 +7,6 @@
 
 namespace rlft
 {
-  std::filesystem::path ExeDir();
   std::filesystem::path AssetPath(const std::filesystem::path& rel);
 
   void ComputeLetterbox(int win_w, int win_h, int img_w, int img_h, float& out_scale, float& out_off_x, float& out_off_y, float& out_draw_w, float& out_draw_h);

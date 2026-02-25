@@ -8,17 +8,11 @@
 
 namespace rlft
 {
-  std::filesystem::path ExeDir()
-  {
-    const char* dir = GetApplicationDirectory();
-    if (!dir || !dir[0])
-      return std::filesystem::current_path();
-    return std::filesystem::path(dir);
-  }
-
   std::filesystem::path AssetPath(const std::filesystem::path& rel)
   {
-    return ExeDir() / "assets" / rel;
+    auto dir = GetApplicationDirectory();
+    auto base = (dir && dir[0]) ? std::filesystem::path(dir) : std::filesystem::current_path();
+    return base / "assets" / rel;
   }
 
   void ComputeLetterbox(int win_w, int win_h, int img_w, int img_h, float& out_scale, float& out_off_x, float& out_off_y, float& out_draw_w, float& out_draw_h)
