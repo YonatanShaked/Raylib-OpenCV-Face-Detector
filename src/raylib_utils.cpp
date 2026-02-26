@@ -6,6 +6,22 @@
 #define RLIGHTS_IMPLEMENTATION
 #include "rlights.h"
 
+namespace
+{
+  bool RvecToAxisAngle(const cv::Vec3d& rvec, Vector3& out_axis, float& out_angle_deg)
+  {
+    double ax = rvec[0];
+    double ay = rvec[1];
+    double az = rvec[2];
+    double angle = sqrt(ax * ax + ay * ay + az * az);
+    if (angle < 1e-9)
+      return false;
+    out_axis = (Vector3){(float)(ax / angle), (float)(ay / angle), (float)(az / angle)};
+    out_angle_deg = (float)(angle * 180.0 / 3.14159265358979323846);
+    return true;
+  }
+} // namespace
+
 namespace rlft
 {
   std::filesystem::path AssetPath(const std::filesystem::path& rel)
@@ -75,19 +91,6 @@ namespace rlft
     cam.fovy = (float)(fovy * 180.0 / 3.14159265358979323846);
     cam.projection = CAMERA_PERSPECTIVE;
     return cam;
-  }
-
-  bool RvecToAxisAngle(const cv::Vec3d& rvec, Vector3& out_axis, float& out_angle_deg)
-  {
-    double ax = rvec[0];
-    double ay = rvec[1];
-    double az = rvec[2];
-    double angle = sqrt(ax * ax + ay * ay + az * az);
-    if (angle < 1e-9)
-      return false;
-    out_axis = (Vector3){(float)(ax / angle), (float)(ay / angle), (float)(az / angle)};
-    out_angle_deg = (float)(angle * 180.0 / 3.14159265358979323846);
-    return true;
   }
 
   void DrawAxisBarsAtPose(const cv::Vec3d& rvec, const cv::Vec3d& tvec, float len, float thick)

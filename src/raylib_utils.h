@@ -14,8 +14,6 @@ namespace rlft
 
   Camera3D MakeOpenCVCamera(const cv::Mat& K, int img_w, int img_h);
 
-  bool RvecToAxisAngle(const cv::Vec3d& rvec, Vector3& out_axis, float& out_angle_deg);
-
   void DrawAxisBarsAtPose(const cv::Vec3d& rvec, const cv::Vec3d& tvec, float len, float thick);
   void DrawGlassesAtPoseLit(Model& glasses, const cv::Vec3d& rvec, const cv::Vec3d& tvec);
 } // namespace rlft
