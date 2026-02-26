@@ -3,22 +3,25 @@
 
 #include <opencv2/opencv.hpp>
 
-class CameraHandler
+namespace camh
 {
-public:
-  CameraHandler(int device_index, int requested_width, int requested_height, int requested_fps);
-  ~CameraHandler();
+  class CameraHandler
+  {
+  public:
+    CameraHandler(int device_index, int requested_width, int requested_height, int requested_fps);
+    ~CameraHandler();
 
-  bool IsOpened() const;
-  int Width() const;
-  int Height() const;
+    bool IsOpened() const;
+    int Width() const;
+    int Height() const;
 
-  bool Read(cv::Mat& out_bgr);
+    bool Read(cv::Mat& out_bgr);
 
-private:
-  cv::VideoCapture cap_;
-  int width_;
-  int height_;
-};
+  private:
+    cv::VideoCapture cap_;
+    int width_;
+    int height_;
+  };
+} // namespace camh
 
 #endif // CAMERA_HANDLER_H

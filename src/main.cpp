@@ -12,14 +12,14 @@ int main(int argc, char** argv)
   std::filesystem::path cascade_path = rlft::AssetPath("haarcascade_frontalface_default.xml");
   std::filesystem::path lbf_path = rlft::AssetPath("lbfmodel.yaml");
 
-  CameraHandler cam(0, 1280, 720, 30);
+  camh::CameraHandler cam(0, 1280, 720, 30);
   if (!cam.IsOpened())
     return 1;
 
   int img_w = cam.Width();
   int img_h = cam.Height();
 
-  FaceCV face(cascade_path.string(), lbf_path.string(), img_w, img_h, 5, 1, 1);
+  cvfd::FaceCV face(cascade_path.string(), lbf_path.string(), img_w, img_h, 5, 1, 1);
 
   SetConfigFlags(FLAG_WINDOW_RESIZABLE);
   InitWindow(img_w, img_h, "Raylib Face Tracker");
@@ -50,7 +50,7 @@ int main(int argc, char** argv)
   bool show_debug = false;
   bool do_cv = true;
 
-  FaceResult fr;
+  cvfd::FaceResult fr;
 
   while (!WindowShouldClose())
   {
@@ -84,7 +84,7 @@ int main(int argc, char** argv)
 
         for (size_t fi = 0; fi < fr.faces.size(); fi++)
         {
-          const FacePose& fp = fr.faces[fi];
+          const auto& fp = fr.faces[fi];
           rlft::DrawGlassesAtPoseLit(glasses_model, fp.rvec, fp.tvec);
 
           if (show_debug)
@@ -100,7 +100,7 @@ int main(int argc, char** argv)
         {
           for (size_t fi = 0; fi < fr.faces.size(); fi++)
           {
-            const FacePose& fp = fr.faces[fi];
+            const auto& fp = fr.faces[fi];
 
             Vector2 p1 = rlft::MapToWindow({(float)fp.bbox.x, (float)fp.bbox.y}, scale, off_x, off_y);
             Vector2 p2 = rlft::MapToWindow({(float)(fp.bbox.x + fp.bbox.width), (float)(fp.bbox.y + fp.bbox.height)}, scale, off_x, off_y);
