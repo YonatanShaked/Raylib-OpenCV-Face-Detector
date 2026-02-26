@@ -1,4 +1,5 @@
 #include "raylib_utils.h"
+#include <opencv2/core/cvdef.h>
 #include <rlgl.h>
 
 #define RLIGHTS_IMPLEMENTATION
@@ -15,7 +16,7 @@ namespace
     if (angle < 1e-9)
       return false;
     out_axis = (Vector3){(float)(ax / angle), (float)(ay / angle), (float)(az / angle)};
-    out_angle_deg = (float)(angle * 180.0 / 3.14159265358979323846);
+    out_angle_deg = (float)(angle * 180.0 / CV_PI);
     return true;
   }
 } // namespace
