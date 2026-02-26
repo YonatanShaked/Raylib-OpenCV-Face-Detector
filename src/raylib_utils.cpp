@@ -1,6 +1,4 @@
 #include "raylib_utils.h"
-#include <cmath>
-#include <raylib.h>
 #include <rlgl.h>
 
 #define RLIGHTS_IMPLEMENTATION

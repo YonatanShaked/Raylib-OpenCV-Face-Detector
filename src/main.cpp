@@ -2,8 +2,6 @@
 #include "face_cv.h"
 #include "raylib_utils.h"
 #include "rlights.h"
-#include <filesystem>
-#include <string>
 #include <raylib.h>
 #include <rlgl.h>
 
