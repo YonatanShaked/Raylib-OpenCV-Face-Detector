@@ -116,11 +116,8 @@ int main(int argc, char** argv)
       }
     }
 
-    std::string debug_text = "Press 1 to toggle debug info (" + std::string(show_debug ? "ON" : "OFF") + ")";
-    std::string cv_text = "Press 2 to toggle cv computations (" + std::string(do_cv ? "ON" : "OFF") + ")";
-
-    DrawText(debug_text.c_str(), 10, 10, 20, GREEN);
-    DrawText(cv_text.c_str(), 10, 35, 20, GREEN);
+    DrawText(TextFormat("Press 1 to toggle debug info (%s)", show_debug ? "ON" : "OFF"), 10, 10, 20, GREEN);
+    DrawText(TextFormat("Press 2 to toggle cv computations (%s)", do_cv ? "ON" : "OFF"), 10, 35, 20, GREEN);
 
     EndDrawing();
   }
