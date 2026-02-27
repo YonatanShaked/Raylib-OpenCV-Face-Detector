@@ -83,7 +83,7 @@ int main(int argc, char** argv)
         for (size_t fi = 0; fi < fr.faces.size(); fi++)
         {
           const auto& fp = fr.faces[fi];
-          rlft::DrawGlassesAtPoseLit(glasses_model, fp.rvec, fp.tvec);
+          rlft::DrawModelAtPoseLit(glasses_model, fp.rvec, fp.tvec);
 
           if (show_debug)
             rlft::DrawAxisBarsAtPose(fp.rvec, fp.tvec, 15.0f, 1.0f);

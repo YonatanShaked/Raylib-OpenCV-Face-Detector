@@ -110,7 +110,7 @@ namespace rlft
     rlPopMatrix();
   }
 
-  void DrawGlassesAtPoseLit(Model& glasses, const cv::Vec3d& rvec, const cv::Vec3d& tvec)
+  void DrawModelAtPoseLit(Model& model, const cv::Vec3d& rvec, const cv::Vec3d& tvec)
   {
     Vector3 axis;
     float ang_deg = 0.0f;
@@ -121,13 +121,9 @@ namespace rlft
     if (RvecToAxisAngle(rvec, axis, ang_deg))
       rlRotatef(ang_deg, axis.x, axis.y, axis.z);
 
-    rlRotatef(90.0f, 1.0f, 0.0f, 0.0f);
-    rlRotatef(180.0f, 0.0f, 1.0f, 0.0f);
+    model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = (Color){15, 25, 70, 255};
 
-    glasses.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = (Color){15, 25, 70, 255};
-
-    float s = 0.2f;
-    DrawModel(glasses, (Vector3){0.0f, 0.0f, 0.0f}, s, WHITE);
+    DrawModel(model, (Vector3){0.0f, 0.0f, 0.0f}, 1.0f, WHITE);
 
     rlPopMatrix();
   }

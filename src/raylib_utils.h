@@ -12,7 +12,7 @@ namespace rlft
   Vector2 MapToWindow(const cv::Point2f& p, float scale, float off_x, float off_y);
   Camera3D MakeOpenCVCamera(const cv::Mat& K, int img_w, int img_h);
   void DrawAxisBarsAtPose(const cv::Vec3d& rvec, const cv::Vec3d& tvec, float len, float thick);
-  void DrawGlassesAtPoseLit(Model& glasses, const cv::Vec3d& rvec, const cv::Vec3d& tvec);
+  void DrawModelAtPoseLit(Model& model, const cv::Vec3d& rvec, const cv::Vec3d& tvec);
 } // namespace rlft
 
 #endif // RAYLIB_UTILS_H
