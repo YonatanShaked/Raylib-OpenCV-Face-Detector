@@ -1,4 +1,5 @@
 #include "camera_handler.h"
+#include <chrono>
 #include <iostream>
 
 namespace
@@ -18,6 +19,8 @@ namespace camh
 {
   CameraHandler::CameraHandler(int device_index, int requested_width, int requested_height, int requested_fps)
     : cap_()
+    , frames_(2)
+    , worker_()
     , width_(0)
     , height_(0)
   {
@@ -48,12 +51,13 @@ namespace camh
     height_ = (int)cap_.get(cv::CAP_PROP_FRAME_HEIGHT);
 
     std::cerr << "Camera opened. Backend=" << cap_.get(cv::CAP_PROP_BACKEND) << " WxH=" << width_ << "x" << height_ << " FPS=" << cap_.get(cv::CAP_PROP_FPS) << "\n";
+
+    worker_ = std::thread(&CameraHandler::Run, this);
   }
 
   CameraHandler::~CameraHandler()
   {
-    if (cap_.isOpened())
-      cap_.release();
+    Stop();
   }
 
   bool CameraHandler::IsOpened() const
@@ -71,20 +75,47 @@ namespace camh
     return height_;
   }
 
-  bool CameraHandler::Read(cv::Mat& out_bgr)
+  utils::Channel<CameraFrame>& CameraHandler::Frames()
   {
-    if (!cap_.isOpened())
-      return false;
+    return frames_;
+  }
 
-    cv::Mat frame;
+  void CameraHandler::Stop()
+  {
+    frames_.Close();
 
-    if (!cap_.read(frame))
-      return false;
+    if (worker_.joinable())
+      worker_.join();
 
-    if (frame.empty())
-      return false;
+    if (cap_.isOpened())
+      cap_.release();
+  }
 
-    out_bgr = frame;
-    return true;
+  void CameraHandler::Run()
+  {
+    std::uint64_t frame_index = 0;
+
+    while (cap_.isOpened())
+    {
+      cv::Mat frame;
+
+      if (!cap_.read(frame))
+      {
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        continue;
+      }
+
+      if (frame.empty())
+        continue;
+
+      CameraFrame out;
+      out.index = frame_index++;
+      out.bgr = frame.clone();
+
+      if (!frames_.Send(std::move(out)))
+        break;
+    }
+
+    frames_.Close();
   }
 } // namespace camh

@@ -10,6 +10,7 @@ find_package(OpenCV REQUIRED)
 add_executable(rl_face_tracker
   src/main.cpp
   src/face_cv.cpp
+  src/face_worker.cpp
   src/camera_handler.cpp
   src/raylib_utils.cpp
 )

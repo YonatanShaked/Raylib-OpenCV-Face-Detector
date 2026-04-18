@@ -1,10 +1,19 @@
 #ifndef CAMERA_HANDLER_H
 #define CAMERA_HANDLER_H
 
+#include "channel.h"
+#include <cstdint>
 #include <opencv2/opencv.hpp>
+#include <thread>
 
 namespace camh
 {
+  struct CameraFrame
+  {
+    std::uint64_t index;
+    cv::Mat bgr;
+  };
+
   class CameraHandler
   {
   public:
@@ -14,11 +23,15 @@ namespace camh
     bool IsOpened() const;
     int Width() const;
     int Height() const;
-
-    bool Read(cv::Mat& out_bgr);
+    utils::Channel<CameraFrame>& Frames();
+    void Stop();
 
   private:
+    void Run();
+
     cv::VideoCapture cap_;
+    utils::Channel<CameraFrame> frames_;
+    std::thread worker_;
     int width_;
     int height_;
   };
