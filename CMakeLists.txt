@@ -15,7 +15,10 @@ add_executable(rl_face_tracker
   src/main.cpp
 )
 
-target_include_directories(rl_face_tracker PRIVATE src)
+target_include_directories(rl_face_tracker PRIVATE
+  src
+  third_party
+)
 
 if (TARGET opencv_core)
   target_link_libraries(rl_face_tracker PRIVATE opencv_core opencv_imgproc opencv_highgui opencv_videoio opencv_objdetect opencv_face)
