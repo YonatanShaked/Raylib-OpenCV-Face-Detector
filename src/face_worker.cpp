@@ -2,14 +2,7 @@
 
 namespace facew
 {
-  FaceWorker::FaceWorker(utils::Channel<camh::CameraFrame>& input,
-                         const std::string& cascade_path,
-                         const std::string& lbf_model_path,
-                         int image_width,
-                         int image_height,
-                         int max_faces,
-                         int detect_every_n_frames,
-                         int downscale)
+  FaceWorker::FaceWorker(utils::Channel<camh::CameraFrame>& input, const std::string& cascade_path, const std::string& lbf_model_path, int image_width, int image_height, int max_faces, int detect_every_n_frames, int downscale)
     : input_(input)
     , frames_(2)
     , face_(cascade_path, lbf_model_path, image_width, image_height, max_faces, detect_every_n_frames, downscale)

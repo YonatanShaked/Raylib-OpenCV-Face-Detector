@@ -9,8 +9,7 @@
 
 namespace utils
 {
-  template <typename T>
-  class Channel
+  template <typename T> class Channel
   {
   public:
     explicit Channel(std::size_t capacity)
@@ -26,7 +25,11 @@ namespace utils
     {
       std::unique_lock<std::mutex> lock(mutex_);
 
-      send_cv_.wait(lock, [this]() { return closed_ || queue_.size() < capacity_; });
+      send_cv_.wait(lock,
+                    [this]()
+                    {
+                      return closed_ || queue_.size() < capacity_;
+                    });
 
       if (closed_)
         return false;
@@ -40,7 +43,11 @@ namespace utils
     {
       std::unique_lock<std::mutex> lock(mutex_);
 
-      send_cv_.wait(lock, [this]() { return closed_ || queue_.size() < capacity_; });
+      send_cv_.wait(lock,
+                    [this]()
+                    {
+                      return closed_ || queue_.size() < capacity_;
+                    });
 
       if (closed_)
         return false;
@@ -54,7 +61,11 @@ namespace utils
     {
       std::unique_lock<std::mutex> lock(mutex_);
 
-      recv_cv_.wait(lock, [this]() { return closed_ || !queue_.empty(); });
+      recv_cv_.wait(lock,
+                    [this]()
+                    {
+                      return closed_ || !queue_.empty();
+                    });
 
       if (queue_.empty())
         return false;
@@ -98,6 +109,6 @@ namespace utils
     std::condition_variable send_cv_;
     std::condition_variable recv_cv_;
   };
-}
+} // namespace utils
 
 #endif

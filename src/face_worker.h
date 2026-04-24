@@ -18,14 +18,7 @@ namespace facew
   class FaceWorker
   {
   public:
-    FaceWorker(utils::Channel<camh::CameraFrame>& input,
-               const std::string& cascade_path,
-               const std::string& lbf_model_path,
-               int image_width,
-               int image_height,
-               int max_faces,
-               int detect_every_n_frames,
-               int downscale);
+    FaceWorker(utils::Channel<camh::CameraFrame>& input, const std::string& cascade_path, const std::string& lbf_model_path, int image_width, int image_height, int max_faces, int detect_every_n_frames, int downscale);
     ~FaceWorker();
 
     const cv::Mat& CameraMatrix() const;
