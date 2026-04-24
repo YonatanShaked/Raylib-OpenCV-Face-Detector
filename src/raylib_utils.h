@@ -2,12 +2,10 @@
 #define RAYLIB_UTILS_H
 
 #include "vision_types.h"
-#include <filesystem>
 #include <raylib.h>
 
 namespace rlft
 {
-  std::filesystem::path AssetPath(const std::filesystem::path& rel);
   void DrawWebcamTexture(Texture2D tex, int img_w, int img_h, float& scale, float& off_x, float& off_y, float& draw_w, float& draw_h);
   void ConvertBgrToRgba(const vision::ImageBuffer& src, vision::ImageBuffer& dst);
   Vector2 MapToWindow(const vision::Point2f& p, float scale, float off_x, float off_y);

@@ -8,6 +8,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 find_package(OpenCV REQUIRED)
 
 add_executable(rl_face_tracker
+  src/app.cpp
+  src/asset_utils.cpp
   src/main.cpp
   src/face_detector.cpp
   src/camera_handler.cpp

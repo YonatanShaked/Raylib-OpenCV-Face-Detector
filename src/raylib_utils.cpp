@@ -23,13 +23,6 @@ namespace
 
 namespace rlft
 {
-  std::filesystem::path AssetPath(const std::filesystem::path& rel)
-  {
-    auto dir = GetApplicationDirectory();
-    auto base = (dir && dir[0]) ? std::filesystem::path(dir) : std::filesystem::current_path();
-    return base / "assets" / rel;
-  }
-
   void DrawWebcamTexture(Texture2D tex, int img_w, int img_h, float& scale, float& off_x, float& off_y, float& draw_w, float& draw_h)
   {
     int win_w = GetScreenWidth();
