@@ -1,4 +1,4 @@
-#include "face_detector.h"
+#include "face/detector.h"
 #include <algorithm>
 #include <opencv2/face.hpp>
 #include <opencv2/opencv.hpp>
@@ -57,7 +57,7 @@ namespace
   public:
     FaceCV(const std::string& cascade_path, const std::string& lbf_model_path, int image_width, int image_height, int max_faces, int detect_every_n_frames, int downscale);
 
-    facedet::FaceResult Process(const vision::ImageBuffer& bgr_frame);
+    face::FaceResult Process(const vision::ImageBuffer& bgr_frame);
     const vision::CameraIntrinsics& CameraIntrinsics() const;
 
   private:
@@ -76,7 +76,7 @@ namespace
     int downscale_;
     int frame_counter_;
 
-    facedet::FaceResult last_result_;
+    face::FaceResult last_result_;
   };
 
   FaceCV::FaceCV(const std::string& cascade_path, const std::string& lbf_model_path, int image_width, int image_height, int max_faces, int detect_every_n_frames, int downscale)
@@ -111,7 +111,7 @@ namespace
     return camera_intrinsics_;
   }
 
-  facedet::FaceResult FaceCV::Process(const vision::ImageBuffer& bgr_frame)
+  face::FaceResult FaceCV::Process(const vision::ImageBuffer& bgr_frame)
   {
     frame_counter_++;
     if (detect_every_n_frames_ > 1 && (frame_counter_ % detect_every_n_frames_) != 0)
@@ -189,7 +189,7 @@ namespace
       if (landmarks[i].size() < 55)
         continue;
 
-      facedet::FacePose pose;
+      face::FacePose pose;
       pose.bbox = ToRect(faces[i]);
       pose.landmarks_68.reserve(landmarks[i].size());
       for (const auto& landmark : landmarks[i])
@@ -239,7 +239,7 @@ namespace
   }
 } // namespace
 
-namespace facedet
+namespace face
 {
   struct FaceDetector::Impl
   {
@@ -251,7 +251,7 @@ namespace facedet
     FaceCV face_;
   };
 
-  FaceDetector::FaceDetector(utils::Channel<camh::CameraFrame>& input, const std::string& cascade_path, const std::string& lbf_model_path, int image_width, int image_height, int max_faces, int detect_every_n_frames, int downscale)
+  FaceDetector::FaceDetector(utils::Channel<camera::CameraFrame>& input, const std::string& cascade_path, const std::string& lbf_model_path, int image_width, int image_height, int max_faces, int detect_every_n_frames, int downscale)
     : input_(input)
     , frames_(2)
     , impl_(std::make_unique<Impl>(cascade_path, lbf_model_path, image_width, image_height, max_faces, detect_every_n_frames, downscale))
@@ -291,7 +291,7 @@ namespace facedet
 
   void FaceDetector::Run()
   {
-    camh::CameraFrame in;
+    camera::CameraFrame in;
 
     while (input_.Recv(in))
     {
@@ -307,4 +307,4 @@ namespace facedet
 
     frames_.Close();
   }
-} // namespace facedet
+} // namespace face

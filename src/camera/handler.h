@@ -1,13 +1,13 @@
 #ifndef CAMERA_HANDLER_H
 #define CAMERA_HANDLER_H
 
-#include "channel.h"
-#include "vision_types.h"
+#include "utils/channel.h"
+#include "vision/types.h"
 #include <cstdint>
 #include <memory>
 #include <thread>
 
-namespace camh
+namespace camera
 {
   struct CameraFrame
   {
@@ -37,6 +37,6 @@ namespace camh
     int width_;
     int height_;
   };
-} // namespace camh
+} // namespace camera
 
 #endif // CAMERA_HANDLER_H

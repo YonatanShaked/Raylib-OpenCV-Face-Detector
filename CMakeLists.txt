@@ -8,13 +8,14 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 find_package(OpenCV REQUIRED)
 
 add_executable(rl_face_tracker
-  src/app.cpp
-  src/asset_utils.cpp
+  src/app/app.cpp
+  src/assets/paths.cpp
+  src/camera/handler.cpp
+  src/face/detector.cpp
   src/main.cpp
-  src/face_detector.cpp
-  src/camera_handler.cpp
-  src/raylib_utils.cpp
 )
+
+target_include_directories(rl_face_tracker PRIVATE src)
 
 if (TARGET opencv_core)
   target_link_libraries(rl_face_tracker PRIVATE opencv_core opencv_imgproc opencv_highgui opencv_videoio opencv_objdetect opencv_face)

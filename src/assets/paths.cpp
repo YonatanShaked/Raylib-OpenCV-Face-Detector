@@ -1,4 +1,4 @@
-#include "asset_utils.h"
+#include "assets/paths.h"
 
 namespace assets
 {

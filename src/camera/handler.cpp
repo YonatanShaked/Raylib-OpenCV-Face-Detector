@@ -1,5 +1,6 @@
-#include "camera_handler.h"
+#include "camera/handler.h"
 #include <chrono>
+#include <cstring>
 #include <iostream>
 #include <opencv2/opencv.hpp>
 
@@ -16,7 +17,7 @@ namespace
   }
 } // namespace
 
-namespace camh
+namespace camera
 {
   struct CameraHandler::Impl
   {
@@ -130,4 +131,4 @@ namespace camh
 
     frames_.Close();
   }
-} // namespace camh
+} // namespace camera
