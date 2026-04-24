@@ -6,7 +6,6 @@
 #include "vision/types.h"
 #include <atomic>
 #include <memory>
-#include <string>
 #include <thread>
 #include <vector>
 
@@ -35,7 +34,7 @@ namespace face
   class FaceDetector
   {
   public:
-    FaceDetector(utils::Channel<camera::CameraFrame>& input, const std::string& cascade_path, const std::string& lbf_model_path, int image_width, int image_height, int max_faces, int detect_every_n_frames, int downscale);
+    FaceDetector(utils::Channel<camera::CameraFrame>& input, int image_width, int image_height, int max_faces, int detect_every_n_frames, int downscale);
     ~FaceDetector();
 
     const vision::CameraIntrinsics& CameraIntrinsics() const;

@@ -1,4 +1,5 @@
 #include "face/detector.h"
+#include "assets/paths.h"
 #include <algorithm>
 #include <opencv2/face.hpp>
 #include <opencv2/opencv.hpp>
@@ -243,18 +244,18 @@ namespace face
 {
   struct FaceDetector::Impl
   {
-    explicit Impl(const std::string& cascade_path, const std::string& lbf_model_path, int image_width, int image_height, int max_faces, int detect_every_n_frames, int downscale)
-      : face_(cascade_path, lbf_model_path, image_width, image_height, max_faces, detect_every_n_frames, downscale)
+    explicit Impl(int image_width, int image_height, int max_faces, int detect_every_n_frames, int downscale)
+      : face_(assets::AssetPath("haarcascade_frontalface_default.xml").string(), assets::AssetPath("lbfmodel.yaml").string(), image_width, image_height, max_faces, detect_every_n_frames, downscale)
     {
     }
 
     FaceCV face_;
   };
 
-  FaceDetector::FaceDetector(utils::Channel<camera::CameraFrame>& input, const std::string& cascade_path, const std::string& lbf_model_path, int image_width, int image_height, int max_faces, int detect_every_n_frames, int downscale)
+  FaceDetector::FaceDetector(utils::Channel<camera::CameraFrame>& input, int image_width, int image_height, int max_faces, int detect_every_n_frames, int downscale)
     : input_(input)
     , frames_(2)
-    , impl_(std::make_unique<Impl>(cascade_path, lbf_model_path, image_width, image_height, max_faces, detect_every_n_frames, downscale))
+    , impl_(std::make_unique<Impl>(image_width, image_height, max_faces, detect_every_n_frames, downscale))
     , enabled_(true)
     , worker_(&FaceDetector::Run, this)
   {
