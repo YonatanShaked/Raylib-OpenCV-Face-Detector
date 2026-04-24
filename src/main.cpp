@@ -1,5 +1,5 @@
 #include "camera_handler.h"
-#include "face_worker.h"
+#include "face_detector.h"
 #include "raylib_utils.h"
 #include "rlights.h"
 #include <raylib.h>
@@ -17,7 +17,7 @@ int main(int argc, char** argv)
   int img_w = cam.Width();
   int img_h = cam.Height();
 
-  facew::FaceWorker face(cam.Frames(), cascade_path.string(), lbf_path.string(), img_w, img_h, 5, 1, 1);
+  facedet::FaceDetector face(cam.Frames(), cascade_path.string(), lbf_path.string(), img_w, img_h, 5, 1, 1);
 
   SetConfigFlags(FLAG_WINDOW_RESIZABLE);
   InitWindow(img_w, img_h, "Raylib Face Tracker");
@@ -47,8 +47,8 @@ int main(int argc, char** argv)
   bool show_debug = false;
   bool do_cv = true;
 
-  cvfd::FaceResult fr;
-  facew::FaceFrame render_frame;
+  facedet::FaceResult fr;
+  facedet::FaceFrame render_frame;
   bool has_frame = false;
 
   while (!WindowShouldClose())
@@ -64,7 +64,7 @@ int main(int argc, char** argv)
         fr.faces.clear();
     }
 
-    facew::FaceFrame next_frame;
+    facedet::FaceFrame next_frame;
     bool got_frame = false;
 
     while (face.Frames().TryRecv(next_frame))

@@ -1,9 +1,11 @@
-#include "face_cv.h"
+#include "face_detector.h"
 #include <algorithm>
+#include <opencv2/face.hpp>
+#include <opencv2/opencv.hpp>
 
-namespace cvfd
+namespace
 {
-  static cv::Mat MakeCameraMatrix(int w, int h)
+  cv::Mat MakeCameraMatrix(int w, int h)
   {
     cv::Mat K = cv::Mat::eye(3, 3, CV_64F);
     double f = (double)w;
@@ -14,11 +16,35 @@ namespace cvfd
     return K;
   }
 
+  class FaceCV
+  {
+  public:
+    FaceCV(const std::string& cascade_path, const std::string& lbf_model_path, int image_width, int image_height, int max_faces, int detect_every_n_frames, int downscale);
+
+    facedet::FaceResult Process(const cv::Mat& bgr_frame);
+    const cv::Mat& CameraMatrix() const;
+
+  private:
+    cv::CascadeClassifier face_cascade_;
+    cv::Ptr<cv::face::Facemark> facemark_;
+
+    cv::Mat camera_matrix_;
+    cv::Mat dist_coeffs_;
+
+    std::vector<cv::Point3d> object_points_;
+    std::vector<int> object_point_ids_;
+
+    int max_faces_;
+    int detect_every_n_frames_;
+    int downscale_;
+    int frame_counter_;
+
+    facedet::FaceResult last_result_;
+  };
+
   FaceCV::FaceCV(const std::string& cascade_path, const std::string& lbf_model_path, int image_width, int image_height, int max_faces, int detect_every_n_frames, int downscale)
     : camera_matrix_(MakeCameraMatrix(image_width, image_height))
     , dist_coeffs_(cv::Mat::zeros(5, 1, CV_64F))
-    , img_w_(image_width)
-    , img_h_(image_height)
     , max_faces_(max_faces)
     , detect_every_n_frames_(detect_every_n_frames)
     , downscale_(downscale)
@@ -42,22 +68,12 @@ namespace cvfd
     object_point_ids_.push_back(54);
   }
 
-  int FaceCV::ImageWidth() const
-  {
-    return img_w_;
-  }
-
-  int FaceCV::ImageHeight() const
-  {
-    return img_h_;
-  }
-
   const cv::Mat& FaceCV::CameraMatrix() const
   {
     return camera_matrix_;
   }
 
-  FaceResult FaceCV::Process(const cv::Mat& bgr_frame)
+  facedet::FaceResult FaceCV::Process(const cv::Mat& bgr_frame)
   {
     frame_counter_++;
     if (detect_every_n_frames_ > 1 && (frame_counter_ % detect_every_n_frames_) != 0)
@@ -105,7 +121,7 @@ namespace cvfd
               faces.end(),
               [](const cv::Rect& a, const cv::Rect& b)
               {
-                return (a.area() > b.area());
+                return a.area() > b.area();
               });
 
     if ((int)faces.size() > max_faces_)
@@ -134,7 +150,7 @@ namespace cvfd
       if (landmarks[i].size() < 55)
         continue;
 
-      FacePose pose;
+      facedet::FacePose pose;
       pose.bbox = faces[i];
       pose.landmarks_68 = landmarks[i];
       pose.axis_points.clear();
@@ -153,7 +169,6 @@ namespace cvfd
       cv::Mat tvec = cv::Mat::zeros(3, 1, CV_64F);
 
       bool pnp_ok = cv::solvePnP(object_points_, image_points, camera_matrix_, dist_coeffs_, rvec, tvec, true, cv::SOLVEPNP_ITERATIVE);
-
       if (!pnp_ok)
         continue;
 
@@ -179,4 +194,75 @@ namespace cvfd
 
     return last_result_;
   }
-} // namespace cvfd
+} // namespace
+
+namespace facedet
+{
+  struct FaceDetector::Impl
+  {
+    explicit Impl(const std::string& cascade_path, const std::string& lbf_model_path, int image_width, int image_height, int max_faces, int detect_every_n_frames, int downscale)
+      : face_(cascade_path, lbf_model_path, image_width, image_height, max_faces, detect_every_n_frames, downscale)
+    {
+    }
+
+    FaceCV face_;
+  };
+
+  FaceDetector::FaceDetector(utils::Channel<camh::CameraFrame>& input, const std::string& cascade_path, const std::string& lbf_model_path, int image_width, int image_height, int max_faces, int detect_every_n_frames, int downscale)
+    : input_(input)
+    , frames_(2)
+    , impl_(std::make_unique<Impl>(cascade_path, lbf_model_path, image_width, image_height, max_faces, detect_every_n_frames, downscale))
+    , enabled_(true)
+    , worker_(&FaceDetector::Run, this)
+  {
+  }
+
+  FaceDetector::~FaceDetector()
+  {
+    Stop();
+  }
+
+  const cv::Mat& FaceDetector::CameraMatrix() const
+  {
+    return impl_->face_.CameraMatrix();
+  }
+
+  utils::Channel<FaceFrame>& FaceDetector::Frames()
+  {
+    return frames_;
+  }
+
+  void FaceDetector::SetEnabled(bool enabled)
+  {
+    enabled_.store(enabled);
+  }
+
+  void FaceDetector::Stop()
+  {
+    input_.Close();
+    frames_.Close();
+
+    if (worker_.joinable())
+      worker_.join();
+  }
+
+  void FaceDetector::Run()
+  {
+    camh::CameraFrame in;
+
+    while (input_.Recv(in))
+    {
+      FaceFrame out;
+      out.camera.index = in.index;
+      out.camera.bgr = std::move(in.bgr);
+
+      if (enabled_.load())
+        out.result = impl_->face_.Process(out.camera.bgr);
+
+      if (!frames_.Send(std::move(out)))
+        break;
+    }
+
+    frames_.Close();
+  }
+} // namespace facedet
