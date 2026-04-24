@@ -1,6 +1,7 @@
 #include "camera_handler.h"
 #include <chrono>
 #include <iostream>
+#include <opencv2/opencv.hpp>
 
 namespace
 {
@@ -17,18 +18,23 @@ namespace
 
 namespace camh
 {
+  struct CameraHandler::Impl
+  {
+    cv::VideoCapture cap;
+  };
+
   CameraHandler::CameraHandler(int device_index, int requested_width, int requested_height, int requested_fps)
-    : cap_()
-    , frames_(2)
+    : frames_(2)
+    , impl_(std::make_unique<Impl>())
     , worker_()
     , width_(0)
     , height_(0)
   {
     bool opened = false;
 
-    opened = TryOpen(cap_, device_index, cv::CAP_V4L2);
+    opened = TryOpen(impl_->cap, device_index, cv::CAP_V4L2);
     if (!opened)
-      opened = TryOpen(cap_, device_index, cv::CAP_ANY);
+      opened = TryOpen(impl_->cap, device_index, cv::CAP_ANY);
 
     if (!opened)
     {
@@ -37,20 +43,20 @@ namespace camh
     }
 
     if (requested_width > 0)
-      cap_.set(cv::CAP_PROP_FRAME_WIDTH, requested_width);
+      impl_->cap.set(cv::CAP_PROP_FRAME_WIDTH, requested_width);
 
     if (requested_height > 0)
-      cap_.set(cv::CAP_PROP_FRAME_HEIGHT, requested_height);
+      impl_->cap.set(cv::CAP_PROP_FRAME_HEIGHT, requested_height);
 
     if (requested_fps > 0)
-      cap_.set(cv::CAP_PROP_FPS, requested_fps);
+      impl_->cap.set(cv::CAP_PROP_FPS, requested_fps);
 
-    cap_.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'));
+    impl_->cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'));
 
-    width_ = (int)cap_.get(cv::CAP_PROP_FRAME_WIDTH);
-    height_ = (int)cap_.get(cv::CAP_PROP_FRAME_HEIGHT);
+    width_ = (int)impl_->cap.get(cv::CAP_PROP_FRAME_WIDTH);
+    height_ = (int)impl_->cap.get(cv::CAP_PROP_FRAME_HEIGHT);
 
-    std::cerr << "Camera opened. Backend=" << cap_.get(cv::CAP_PROP_BACKEND) << " WxH=" << width_ << "x" << height_ << " FPS=" << cap_.get(cv::CAP_PROP_FPS) << "\n";
+    std::cerr << "Camera opened. Backend=" << impl_->cap.get(cv::CAP_PROP_BACKEND) << " WxH=" << width_ << "x" << height_ << " FPS=" << impl_->cap.get(cv::CAP_PROP_FPS) << "\n";
 
     worker_ = std::thread(&CameraHandler::Run, this);
   }
@@ -62,7 +68,7 @@ namespace camh
 
   bool CameraHandler::IsOpened() const
   {
-    return cap_.isOpened();
+    return impl_ && impl_->cap.isOpened();
   }
 
   int CameraHandler::Width() const
@@ -87,19 +93,19 @@ namespace camh
     if (worker_.joinable())
       worker_.join();
 
-    if (cap_.isOpened())
-      cap_.release();
+    if (impl_ && impl_->cap.isOpened())
+      impl_->cap.release();
   }
 
   void CameraHandler::Run()
   {
     std::uint64_t frame_index = 0;
 
-    while (cap_.isOpened())
+    while (impl_ && impl_->cap.isOpened())
     {
       cv::Mat frame;
 
-      if (!cap_.read(frame))
+      if (!impl_->cap.read(frame))
       {
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
         continue;
@@ -110,7 +116,13 @@ namespace camh
 
       CameraFrame out;
       out.index = frame_index++;
-      out.bgr = frame.clone();
+      out.bgr.width = frame.cols;
+      out.bgr.height = frame.rows;
+      out.bgr.channels = frame.channels();
+
+      const size_t byte_count = frame.total() * frame.elemSize();
+      out.bgr.pixels.resize(byte_count);
+      std::memcpy(out.bgr.pixels.data(), frame.data, byte_count);
 
       if (!frames_.Send(std::move(out)))
         break;

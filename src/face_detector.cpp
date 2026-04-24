@@ -5,15 +5,51 @@
 
 namespace
 {
-  cv::Mat MakeCameraMatrix(int w, int h)
+  vision::CameraIntrinsics MakeCameraIntrinsics(int w, int h)
+  {
+    vision::CameraIntrinsics intrinsics;
+    intrinsics.fx = (double)w;
+    intrinsics.fy = (double)w;
+    intrinsics.cx = (double)w * 0.5;
+    intrinsics.cy = (double)h * 0.5;
+    return intrinsics;
+  }
+
+  cv::Mat MakeCameraMatrix(const vision::CameraIntrinsics& intrinsics)
   {
     cv::Mat K = cv::Mat::eye(3, 3, CV_64F);
-    double f = (double)w;
-    K.at<double>(0, 0) = f;
-    K.at<double>(1, 1) = f;
-    K.at<double>(0, 2) = (double)w * 0.5;
-    K.at<double>(1, 2) = (double)h * 0.5;
+    K.at<double>(0, 0) = intrinsics.fx;
+    K.at<double>(1, 1) = intrinsics.fy;
+    K.at<double>(0, 2) = intrinsics.cx;
+    K.at<double>(1, 2) = intrinsics.cy;
     return K;
+  }
+
+  vision::Rect ToRect(const cv::Rect& rect)
+  {
+    vision::Rect out;
+    out.x = rect.x;
+    out.y = rect.y;
+    out.width = rect.width;
+    out.height = rect.height;
+    return out;
+  }
+
+  vision::Point2f ToPoint2f(const cv::Point2f& point)
+  {
+    vision::Point2f out;
+    out.x = point.x;
+    out.y = point.y;
+    return out;
+  }
+
+  vision::Vec3d ToVec3d(const cv::Vec3d& value)
+  {
+    vision::Vec3d out;
+    out.x = value[0];
+    out.y = value[1];
+    out.z = value[2];
+    return out;
   }
 
   class FaceCV
@@ -21,13 +57,14 @@ namespace
   public:
     FaceCV(const std::string& cascade_path, const std::string& lbf_model_path, int image_width, int image_height, int max_faces, int detect_every_n_frames, int downscale);
 
-    facedet::FaceResult Process(const cv::Mat& bgr_frame);
-    const cv::Mat& CameraMatrix() const;
+    facedet::FaceResult Process(const vision::ImageBuffer& bgr_frame);
+    const vision::CameraIntrinsics& CameraIntrinsics() const;
 
   private:
     cv::CascadeClassifier face_cascade_;
     cv::Ptr<cv::face::Facemark> facemark_;
 
+    vision::CameraIntrinsics camera_intrinsics_;
     cv::Mat camera_matrix_;
     cv::Mat dist_coeffs_;
 
@@ -43,7 +80,8 @@ namespace
   };
 
   FaceCV::FaceCV(const std::string& cascade_path, const std::string& lbf_model_path, int image_width, int image_height, int max_faces, int detect_every_n_frames, int downscale)
-    : camera_matrix_(MakeCameraMatrix(image_width, image_height))
+    : camera_intrinsics_(MakeCameraIntrinsics(image_width, image_height))
+    , camera_matrix_(MakeCameraMatrix(camera_intrinsics_))
     , dist_coeffs_(cv::Mat::zeros(5, 1, CV_64F))
     , max_faces_(max_faces)
     , detect_every_n_frames_(detect_every_n_frames)
@@ -68,12 +106,12 @@ namespace
     object_point_ids_.push_back(54);
   }
 
-  const cv::Mat& FaceCV::CameraMatrix() const
+  const vision::CameraIntrinsics& FaceCV::CameraIntrinsics() const
   {
-    return camera_matrix_;
+    return camera_intrinsics_;
   }
 
-  facedet::FaceResult FaceCV::Process(const cv::Mat& bgr_frame)
+  facedet::FaceResult FaceCV::Process(const vision::ImageBuffer& bgr_frame)
   {
     frame_counter_++;
     if (detect_every_n_frames_ > 1 && (frame_counter_ % detect_every_n_frames_) != 0)
@@ -81,11 +119,12 @@ namespace
 
     last_result_.faces.clear();
 
-    if (bgr_frame.empty())
+    if (bgr_frame.Empty() || bgr_frame.channels != 3)
       return last_result_;
 
+    cv::Mat bgr(bgr_frame.height, bgr_frame.width, CV_8UC3, const_cast<std::uint8_t*>(bgr_frame.pixels.data()));
     cv::Mat gray;
-    cv::cvtColor(bgr_frame, gray, cv::COLOR_BGR2GRAY);
+    cv::cvtColor(bgr, gray, cv::COLOR_BGR2GRAY);
     cv::equalizeHist(gray, gray);
 
     cv::Mat gray_small = gray;
@@ -151,11 +190,10 @@ namespace
         continue;
 
       facedet::FacePose pose;
-      pose.bbox = faces[i];
-      pose.landmarks_68 = landmarks[i];
-      pose.axis_points.clear();
-      pose.rvec = cv::Vec3d(0.0, 0.0, 0.0);
-      pose.tvec = cv::Vec3d(0.0, 0.0, 0.0);
+      pose.bbox = ToRect(faces[i]);
+      pose.landmarks_68.reserve(landmarks[i].size());
+      for (const auto& landmark : landmarks[i])
+        pose.landmarks_68.push_back(ToPoint2f(landmark));
 
       std::vector<cv::Point2d> image_points;
       image_points.reserve(object_point_ids_.size());
@@ -172,8 +210,8 @@ namespace
       if (!pnp_ok)
         continue;
 
-      pose.rvec = cv::Vec3d(rvec.at<double>(0, 0), rvec.at<double>(1, 0), rvec.at<double>(2, 0));
-      pose.tvec = cv::Vec3d(tvec.at<double>(0, 0), tvec.at<double>(1, 0), tvec.at<double>(2, 0));
+      pose.rvec = ToVec3d(cv::Vec3d(rvec.at<double>(0, 0), rvec.at<double>(1, 0), rvec.at<double>(2, 0)));
+      pose.tvec = ToVec3d(cv::Vec3d(tvec.at<double>(0, 0), tvec.at<double>(1, 0), tvec.at<double>(2, 0)));
 
       std::vector<cv::Point3d> axis3d;
       double axis_len = 20.0;
@@ -186,10 +224,15 @@ namespace
       cv::projectPoints(axis3d, rvec, tvec, camera_matrix_, dist_coeffs_, axis2d);
 
       pose.axis_points.reserve(axis2d.size());
-      for (size_t k = 0; k < axis2d.size(); k++)
-        pose.axis_points.push_back(cv::Point2f((float)axis2d[k].x, (float)axis2d[k].y));
+      for (const auto& point : axis2d)
+      {
+        vision::Point2f axis_point;
+        axis_point.x = (float)point.x;
+        axis_point.y = (float)point.y;
+        pose.axis_points.push_back(axis_point);
+      }
 
-      last_result_.faces.push_back(pose);
+      last_result_.faces.push_back(std::move(pose));
     }
 
     return last_result_;
@@ -222,9 +265,9 @@ namespace facedet
     Stop();
   }
 
-  const cv::Mat& FaceDetector::CameraMatrix() const
+  const vision::CameraIntrinsics& FaceDetector::CameraIntrinsics() const
   {
-    return impl_->face_.CameraMatrix();
+    return impl_->face_.CameraIntrinsics();
   }
 
   utils::Channel<FaceFrame>& FaceDetector::Frames()
@@ -253,8 +296,7 @@ namespace facedet
     while (input_.Recv(in))
     {
       FaceFrame out;
-      out.camera.index = in.index;
-      out.camera.bgr = std::move(in.bgr);
+      out.camera = std::move(in);
 
       if (enabled_.load())
         out.result = impl_->face_.Process(out.camera.bgr);

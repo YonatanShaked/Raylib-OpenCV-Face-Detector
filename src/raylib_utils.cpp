@@ -1,5 +1,5 @@
 #include "raylib_utils.h"
-#include <opencv2/core/cvdef.h>
+#include <cmath>
 #include <rlgl.h>
 
 #define RLIGHTS_IMPLEMENTATION
@@ -7,16 +7,16 @@
 
 namespace
 {
-  bool RvecToAxisAngle(const cv::Vec3d& rvec, Vector3& out_axis, float& out_angle_deg)
+  bool RvecToAxisAngle(const vision::Vec3d& rvec, Vector3& out_axis, float& out_angle_deg)
   {
-    double ax = rvec[0];
-    double ay = rvec[1];
-    double az = rvec[2];
+    double ax = rvec.x;
+    double ay = rvec.y;
+    double az = rvec.z;
     double angle = sqrt(ax * ax + ay * ay + az * az);
     if (angle < 1e-9)
       return false;
     out_axis = (Vector3){(float)(ax / angle), (float)(ay / angle), (float)(az / angle)};
-    out_angle_deg = (float)(angle * 180.0 / CV_PI);
+    out_angle_deg = (float)(angle * 180.0 / 3.14159265358979323846);
     return true;
   }
 } // namespace
@@ -71,7 +71,34 @@ namespace rlft
     DrawTexturePro(tex, src, dst, origin, 0.0f, WHITE);
   }
 
-  Vector2 MapToWindow(const cv::Point2f& p, float scale, float off_x, float off_y)
+  void ConvertBgrToRgba(const vision::ImageBuffer& src, vision::ImageBuffer& dst)
+  {
+    if (src.Empty() || src.channels != 3)
+    {
+      dst = {};
+      return;
+    }
+
+    dst.width = src.width;
+    dst.height = src.height;
+    dst.channels = 4;
+    dst.pixels.resize((size_t)src.width * (size_t)src.height * 4u);
+
+    const std::uint8_t* src_ptr = src.pixels.data();
+    std::uint8_t* dst_ptr = dst.pixels.data();
+    const size_t pixel_count = (size_t)src.width * (size_t)src.height;
+    for (size_t i = 0; i < pixel_count; i++)
+    {
+      dst_ptr[0] = src_ptr[2];
+      dst_ptr[1] = src_ptr[1];
+      dst_ptr[2] = src_ptr[0];
+      dst_ptr[3] = 255;
+      src_ptr += 3;
+      dst_ptr += 4;
+    }
+  }
+
+  Vector2 MapToWindow(const vision::Point2f& p, float scale, float off_x, float off_y)
   {
     Vector2 v;
     v.x = off_x + p.x * scale;
@@ -79,10 +106,9 @@ namespace rlft
     return v;
   }
 
-  Camera3D MakeOpenCVCamera(const cv::Mat& K, int img_w, int img_h)
+  Camera3D MakePerspectiveCamera(const vision::CameraIntrinsics& intrinsics, int img_w, int img_h)
   {
-    double fy = K.at<double>(1, 1);
-    double fovy = 2.0 * atan((double)img_h / (2.0 * fy));
+    double fovy = 2.0 * atan((double)img_h / (2.0 * intrinsics.fy));
     Camera3D cam;
     cam.position = (Vector3){0.0f, 0.0f, 0.0f};
     cam.target = (Vector3){0.0f, 0.0f, 1.0f};
@@ -92,13 +118,13 @@ namespace rlft
     return cam;
   }
 
-  void DrawAxisBarsAtPose(const cv::Vec3d& rvec, const cv::Vec3d& tvec, float len, float thick)
+  void DrawAxisBarsAtPose(const vision::Vec3d& rvec, const vision::Vec3d& tvec, float len, float thick)
   {
     Vector3 axis;
     float ang_deg = 0.0f;
 
     rlPushMatrix();
-    rlTranslatef((float)tvec[0], (float)tvec[1], (float)tvec[2]);
+    rlTranslatef((float)tvec.x, (float)tvec.y, (float)tvec.z);
 
     if (RvecToAxisAngle(rvec, axis, ang_deg))
       rlRotatef(ang_deg, axis.x, axis.y, axis.z);
@@ -110,13 +136,13 @@ namespace rlft
     rlPopMatrix();
   }
 
-  void DrawModelAtPoseLit(Model& model, const cv::Vec3d& rvec, const cv::Vec3d& tvec)
+  void DrawModelAtPoseLit(Model& model, const vision::Vec3d& rvec, const vision::Vec3d& tvec)
   {
     Vector3 axis;
     float ang_deg = 0.0f;
 
     rlPushMatrix();
-    rlTranslatef((float)tvec[0], (float)tvec[1], (float)tvec[2]);
+    rlTranslatef((float)tvec.x, (float)tvec.y, (float)tvec.z);
 
     if (RvecToAxisAngle(rvec, axis, ang_deg))
       rlRotatef(ang_deg, axis.x, axis.y, axis.z);

@@ -3,9 +3,9 @@
 
 #include "camera_handler.h"
 #include "channel.h"
+#include "vision_types.h"
 #include <atomic>
 #include <memory>
-#include <opencv2/core.hpp>
 #include <string>
 #include <thread>
 #include <vector>
@@ -14,11 +14,11 @@ namespace facedet
 {
   struct FacePose
   {
-    cv::Rect bbox;
-    std::vector<cv::Point2f> landmarks_68;
-    std::vector<cv::Point2f> axis_points;
-    cv::Vec3d rvec;
-    cv::Vec3d tvec;
+    vision::Rect bbox;
+    std::vector<vision::Point2f> landmarks_68;
+    std::vector<vision::Point2f> axis_points;
+    vision::Vec3d rvec;
+    vision::Vec3d tvec;
   };
 
   struct FaceResult
@@ -38,7 +38,7 @@ namespace facedet
     FaceDetector(utils::Channel<camh::CameraFrame>& input, const std::string& cascade_path, const std::string& lbf_model_path, int image_width, int image_height, int max_faces, int detect_every_n_frames, int downscale);
     ~FaceDetector();
 
-    const cv::Mat& CameraMatrix() const;
+    const vision::CameraIntrinsics& CameraIntrinsics() const;
     utils::Channel<FaceFrame>& Frames();
     void SetEnabled(bool enabled);
     void Stop();

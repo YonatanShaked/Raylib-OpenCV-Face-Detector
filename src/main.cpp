@@ -40,9 +40,13 @@ int main(int argc, char** argv)
 
   Light light = CreateLight(LIGHT_DIRECTIONAL, (Vector3){0.0f, 0.0f, 0.0f}, (Vector3){0.3f, -0.7f, 1.0f}, WHITE, light_shader);
 
-  cv::Mat frame_rgba = cv::Mat(img_h, img_w, CV_8UC4, cv::Scalar(0, 0, 0, 255));
+  vision::ImageBuffer frame_rgba;
+  frame_rgba.width = img_w;
+  frame_rgba.height = img_h;
+  frame_rgba.channels = 4;
+  frame_rgba.pixels.resize((size_t)img_w * (size_t)img_h * 4u, 0);
 
-  Camera3D cv_cam = rlft::MakeOpenCVCamera(face.CameraMatrix(), img_w, img_h);
+  Camera3D cv_cam = rlft::MakePerspectiveCamera(face.CameraIntrinsics(), img_w, img_h);
 
   bool show_debug = false;
   bool do_cv = true;
@@ -76,8 +80,8 @@ int main(int argc, char** argv)
     if (got_frame)
     {
       has_frame = true;
-      cv::cvtColor(render_frame.camera.bgr, frame_rgba, cv::COLOR_BGR2RGBA);
-      UpdateTexture(tex, frame_rgba.data);
+      rlft::ConvertBgrToRgba(render_frame.camera.bgr, frame_rgba);
+      UpdateTexture(tex, frame_rgba.pixels.data());
       fr = render_frame.result;
     }
 

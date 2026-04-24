@@ -2,8 +2,9 @@
 #define CAMERA_HANDLER_H
 
 #include "channel.h"
+#include "vision_types.h"
 #include <cstdint>
-#include <opencv2/opencv.hpp>
+#include <memory>
 #include <thread>
 
 namespace camh
@@ -11,7 +12,7 @@ namespace camh
   struct CameraFrame
   {
     std::uint64_t index;
-    cv::Mat bgr;
+    vision::ImageBuffer bgr;
   };
 
   class CameraHandler
@@ -27,10 +28,11 @@ namespace camh
     void Stop();
 
   private:
+    struct Impl;
     void Run();
 
-    cv::VideoCapture cap_;
     utils::Channel<CameraFrame> frames_;
+    std::unique_ptr<Impl> impl_;
     std::thread worker_;
     int width_;
     int height_;

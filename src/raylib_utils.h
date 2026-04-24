@@ -1,18 +1,19 @@
 #ifndef RAYLIB_UTILS_H
 #define RAYLIB_UTILS_H
 
+#include "vision_types.h"
 #include <filesystem>
-#include <opencv2/core.hpp>
 #include <raylib.h>
 
 namespace rlft
 {
   std::filesystem::path AssetPath(const std::filesystem::path& rel);
   void DrawWebcamTexture(Texture2D tex, int img_w, int img_h, float& scale, float& off_x, float& off_y, float& draw_w, float& draw_h);
-  Vector2 MapToWindow(const cv::Point2f& p, float scale, float off_x, float off_y);
-  Camera3D MakeOpenCVCamera(const cv::Mat& K, int img_w, int img_h);
-  void DrawAxisBarsAtPose(const cv::Vec3d& rvec, const cv::Vec3d& tvec, float len, float thick);
-  void DrawModelAtPoseLit(Model& model, const cv::Vec3d& rvec, const cv::Vec3d& tvec);
+  void ConvertBgrToRgba(const vision::ImageBuffer& src, vision::ImageBuffer& dst);
+  Vector2 MapToWindow(const vision::Point2f& p, float scale, float off_x, float off_y);
+  Camera3D MakePerspectiveCamera(const vision::CameraIntrinsics& intrinsics, int img_w, int img_h);
+  void DrawAxisBarsAtPose(const vision::Vec3d& rvec, const vision::Vec3d& tvec, float len, float thick);
+  void DrawModelAtPoseLit(Model& model, const vision::Vec3d& rvec, const vision::Vec3d& tvec);
 } // namespace rlft
 
 #endif // RAYLIB_UTILS_H
