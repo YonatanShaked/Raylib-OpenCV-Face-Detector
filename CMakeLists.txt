@@ -9,7 +9,7 @@ find_package(OpenCV REQUIRED)
 
 add_executable(rl_face_tracker
   src/app/app.cpp
-  src/assets/paths.cpp
+  src/utils/asset_paths.cpp
   src/camera/handler.cpp
   src/face/detector.cpp
   src/main.cpp

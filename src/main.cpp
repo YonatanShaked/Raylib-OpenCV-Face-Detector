@@ -1,6 +1,6 @@
 #include "app/app.h"
-#include "camera/handler.h"
 #include "face/detector.h"
+#include "camera/handler.h"
 
 int main()
 {

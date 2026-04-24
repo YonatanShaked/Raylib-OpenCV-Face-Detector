@@ -1,14 +1,14 @@
 #include "face/detector.h"
-#include "assets/paths.h"
+#include "utils/asset_paths.h"
 #include <algorithm>
 #include <opencv2/face.hpp>
 #include <opencv2/opencv.hpp>
 
 namespace
 {
-  vision::CameraIntrinsics MakeCameraIntrinsics(int w, int h)
+  utils::CameraIntrinsics MakeCameraIntrinsics(int w, int h)
   {
-    vision::CameraIntrinsics intrinsics;
+    utils::CameraIntrinsics intrinsics;
     intrinsics.fx = (double)w;
     intrinsics.fy = (double)w;
     intrinsics.cx = (double)w * 0.5;
@@ -16,7 +16,7 @@ namespace
     return intrinsics;
   }
 
-  cv::Mat MakeCameraMatrix(const vision::CameraIntrinsics& intrinsics)
+  cv::Mat MakeCameraMatrix(const utils::CameraIntrinsics& intrinsics)
   {
     cv::Mat K = cv::Mat::eye(3, 3, CV_64F);
     K.at<double>(0, 0) = intrinsics.fx;
@@ -26,9 +26,9 @@ namespace
     return K;
   }
 
-  vision::Rect ToRect(const cv::Rect& rect)
+  utils::Rect ToRect(const cv::Rect& rect)
   {
-    vision::Rect out;
+    utils::Rect out;
     out.x = rect.x;
     out.y = rect.y;
     out.width = rect.width;
@@ -36,17 +36,17 @@ namespace
     return out;
   }
 
-  vision::Point2f ToPoint2f(const cv::Point2f& point)
+  utils::Point2f ToPoint2f(const cv::Point2f& point)
   {
-    vision::Point2f out;
+    utils::Point2f out;
     out.x = point.x;
     out.y = point.y;
     return out;
   }
 
-  vision::Vec3d ToVec3d(const cv::Vec3d& value)
+  utils::Vec3d ToVec3d(const cv::Vec3d& value)
   {
-    vision::Vec3d out;
+    utils::Vec3d out;
     out.x = value[0];
     out.y = value[1];
     out.z = value[2];
@@ -58,14 +58,14 @@ namespace
   public:
     FaceCV(const std::string& cascade_path, const std::string& lbf_model_path, int image_width, int image_height, int max_faces, int detect_every_n_frames, int downscale);
 
-    face::FaceResult Process(const vision::ImageBuffer& bgr_frame);
-    const vision::CameraIntrinsics& CameraIntrinsics() const;
+    face::FaceResult Process(const utils::ImageBuffer& bgr_frame);
+    const utils::CameraIntrinsics& CameraIntrinsics() const;
 
   private:
     cv::CascadeClassifier face_cascade_;
     cv::Ptr<cv::face::Facemark> facemark_;
 
-    vision::CameraIntrinsics camera_intrinsics_;
+    utils::CameraIntrinsics camera_intrinsics_;
     cv::Mat camera_matrix_;
     cv::Mat dist_coeffs_;
 
@@ -107,12 +107,12 @@ namespace
     object_point_ids_.push_back(54);
   }
 
-  const vision::CameraIntrinsics& FaceCV::CameraIntrinsics() const
+  const utils::CameraIntrinsics& FaceCV::CameraIntrinsics() const
   {
     return camera_intrinsics_;
   }
 
-  face::FaceResult FaceCV::Process(const vision::ImageBuffer& bgr_frame)
+  face::FaceResult FaceCV::Process(const utils::ImageBuffer& bgr_frame)
   {
     frame_counter_++;
     if (detect_every_n_frames_ > 1 && (frame_counter_ % detect_every_n_frames_) != 0)
@@ -227,7 +227,7 @@ namespace
       pose.axis_points.reserve(axis2d.size());
       for (const auto& point : axis2d)
       {
-        vision::Point2f axis_point;
+        utils::Point2f axis_point;
         axis_point.x = (float)point.x;
         axis_point.y = (float)point.y;
         pose.axis_points.push_back(axis_point);
@@ -245,7 +245,7 @@ namespace face
   struct FaceDetector::Impl
   {
     explicit Impl(int image_width, int image_height, int max_faces, int detect_every_n_frames, int downscale)
-      : face_(assets::AssetPath("haarcascade_frontalface_default.xml").string(), assets::AssetPath("lbfmodel.yaml").string(), image_width, image_height, max_faces, detect_every_n_frames, downscale)
+      : face_(utils::AssetPath("haarcascade_frontalface_default.xml").string(), utils::AssetPath("lbfmodel.yaml").string(), image_width, image_height, max_faces, detect_every_n_frames, downscale)
     {
     }
 
@@ -266,7 +266,7 @@ namespace face
     Stop();
   }
 
-  const vision::CameraIntrinsics& FaceDetector::CameraIntrinsics() const
+  const utils::CameraIntrinsics& FaceDetector::CameraIntrinsics() const
   {
     return impl_->face_.CameraIntrinsics();
   }

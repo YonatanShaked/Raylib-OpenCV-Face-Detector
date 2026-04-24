@@ -1,5 +1,5 @@
 #include "app/app.h"
-#include "assets/paths.h"
+#include "utils/asset_paths.h"
 #include <cmath>
 #include <raylib.h>
 #include <rlgl.h>
@@ -9,7 +9,7 @@
 
 namespace
 {
-  bool RvecToAxisAngle(const vision::Vec3d& rvec, Vector3& out_axis, float& out_angle_deg)
+  bool RvecToAxisAngle(const utils::Vec3d& rvec, Vector3& out_axis, float& out_angle_deg)
   {
     double ax = rvec.x;
     double ay = rvec.y;
@@ -23,7 +23,7 @@ namespace
     return true;
   }
 
-  void ConvertBgrToRgba(const vision::ImageBuffer& src, vision::ImageBuffer& dst)
+  void ConvertBgrToRgba(const utils::ImageBuffer& src, utils::ImageBuffer& dst)
   {
     if (src.Empty() || src.channels != 3)
     {
@@ -50,7 +50,7 @@ namespace
     }
   }
 
-  Vector2 MapToWindow(const vision::Point2f& p, float scale, float off_x, float off_y)
+  Vector2 MapToWindow(const utils::Point2f& p, float scale, float off_x, float off_y)
   {
     Vector2 v;
     v.x = off_x + p.x * scale;
@@ -58,7 +58,7 @@ namespace
     return v;
   }
 
-  Camera3D MakePerspectiveCamera(const vision::CameraIntrinsics& intrinsics, int img_w, int img_h)
+  Camera3D MakePerspectiveCamera(const utils::CameraIntrinsics& intrinsics, int img_w, int img_h)
   {
     (void)img_w;
     double fovy = 2.0 * atan((double)img_h / (2.0 * intrinsics.fy));
@@ -101,7 +101,7 @@ namespace
     DrawTexturePro(tex, src, dst, origin, 0.0f, WHITE);
   }
 
-  void DrawAxisBarsAtPose(const vision::Vec3d& rvec, const vision::Vec3d& tvec, float len, float thick)
+  void DrawAxisBarsAtPose(const utils::Vec3d& rvec, const utils::Vec3d& tvec, float len, float thick)
   {
     Vector3 axis;
     float ang_deg = 0.0f;
@@ -119,7 +119,7 @@ namespace
     rlPopMatrix();
   }
 
-  void DrawModelAtPoseLit(Model& model, const vision::Vec3d& rvec, const vision::Vec3d& tvec)
+  void DrawModelAtPoseLit(Model& model, const utils::Vec3d& rvec, const utils::Vec3d& tvec)
   {
     Vector3 axis;
     float ang_deg = 0.0f;
@@ -149,8 +149,8 @@ namespace app
     Texture2D tex = LoadTextureFromImage(img);
     UnloadImage(img);
 
-    Model glasses_model = LoadModel(assets::AssetPath("glasses.obj").string().c_str());
-    Shader light_shader = LoadShader(assets::AssetPath(std::filesystem::path("shaders") / "lighting.vs").string().c_str(), assets::AssetPath(std::filesystem::path("shaders") / "lighting.fs").string().c_str());
+    Model glasses_model = LoadModel(utils::AssetPath("glasses.obj").string().c_str());
+    Shader light_shader = LoadShader(utils::AssetPath(std::filesystem::path("shaders") / "lighting.vs").string().c_str(), utils::AssetPath(std::filesystem::path("shaders") / "lighting.fs").string().c_str());
 
     for (int i = 0; i < glasses_model.materialCount; i++)
       glasses_model.materials[i].shader = light_shader;
@@ -161,7 +161,7 @@ namespace app
 
     Light light = CreateLight(LIGHT_DIRECTIONAL, (Vector3){0.0f, 0.0f, 0.0f}, (Vector3){0.3f, -0.7f, 1.0f}, WHITE, light_shader);
 
-    vision::ImageBuffer frame_rgba;
+    utils::ImageBuffer frame_rgba;
     frame_rgba.width = image_width;
     frame_rgba.height = image_height;
     frame_rgba.channels = 4;

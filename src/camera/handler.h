@@ -2,7 +2,7 @@
 #define CAMERA_HANDLER_H
 
 #include "utils/channel.h"
-#include "vision/types.h"
+#include "utils/vision_types.h"
 #include <cstdint>
 #include <memory>
 #include <thread>
@@ -12,7 +12,7 @@ namespace camera
   struct CameraFrame
   {
     std::uint64_t index;
-    vision::ImageBuffer bgr;
+    utils::ImageBuffer bgr;
   };
 
   class CameraHandler

@@ -1,10 +1,10 @@
-#ifndef VISION_TYPES_H
-#define VISION_TYPES_H
+#ifndef UTILS_VISION_TYPES_H
+#define UTILS_VISION_TYPES_H
 
 #include <cstdint>
 #include <vector>
 
-namespace vision
+namespace utils
 {
   struct Point2f
   {
@@ -47,6 +47,6 @@ namespace vision
       return pixels.empty() || width <= 0 || height <= 0 || channels <= 0;
     }
   };
-} // namespace vision
+} // namespace utils
 
-#endif // VISION_TYPES_H
+#endif // UTILS_VISION_TYPES_H

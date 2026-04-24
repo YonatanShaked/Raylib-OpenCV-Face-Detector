@@ -3,7 +3,7 @@
 
 #include "camera/handler.h"
 #include "utils/channel.h"
-#include "vision/types.h"
+#include "utils/vision_types.h"
 #include <atomic>
 #include <memory>
 #include <thread>
@@ -13,11 +13,11 @@ namespace face
 {
   struct FacePose
   {
-    vision::Rect bbox;
-    std::vector<vision::Point2f> landmarks_68;
-    std::vector<vision::Point2f> axis_points;
-    vision::Vec3d rvec;
-    vision::Vec3d tvec;
+    utils::Rect bbox;
+    std::vector<utils::Point2f> landmarks_68;
+    std::vector<utils::Point2f> axis_points;
+    utils::Vec3d rvec;
+    utils::Vec3d tvec;
   };
 
   struct FaceResult
@@ -37,7 +37,7 @@ namespace face
     FaceDetector(utils::Channel<camera::CameraFrame>& input, int image_width, int image_height, int max_faces, int detect_every_n_frames, int downscale);
     ~FaceDetector();
 
-    const vision::CameraIntrinsics& CameraIntrinsics() const;
+    const utils::CameraIntrinsics& CameraIntrinsics() const;
     utils::Channel<FaceFrame>& Frames();
     void SetEnabled(bool enabled);
     void Stop();
