@@ -51,6 +51,7 @@ set(RLFT_ASSETS
   assets/shaders/lighting.fs
 )
 
+# Keep runtime assets next to the built executable so running from build/ works.
 foreach(f IN LISTS RLFT_ASSETS)
   add_custom_command(TARGET rl_face_tracker POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:rl_face_tracker>/$<PATH:GET_PARENT_PATH,${f}>
@@ -58,4 +59,10 @@ foreach(f IN LISTS RLFT_ASSETS)
       ${CMAKE_SOURCE_DIR}/${f}
       $<TARGET_FILE_DIR:rl_face_tracker>/${f}
   )
+endforeach()
+
+install(TARGETS rl_face_tracker RUNTIME DESTINATION .)
+foreach(f IN LISTS RLFT_ASSETS)
+  get_filename_component(asset_dir "${f}" DIRECTORY)
+  install(FILES "${CMAKE_SOURCE_DIR}/${f}" DESTINATION "${asset_dir}")
 endforeach()

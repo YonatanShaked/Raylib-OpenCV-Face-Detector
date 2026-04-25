@@ -4,12 +4,11 @@ Detect faces using OpenCV and render 3D models on them using Raylib
 ## Build
 
 ```bash
-mkdir -p build
-cmake -S . -B build
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
 cmake --build build -j
 ```
 
 ## Run
 ```bash
-./build/app
+./build/rl_face_tracker
 ```
