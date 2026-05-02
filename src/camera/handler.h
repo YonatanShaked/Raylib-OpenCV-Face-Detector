@@ -5,7 +5,6 @@
 #include "utils/vision_types.h"
 #include <cstdint>
 #include <memory>
-#include <thread>
 
 namespace camera
 {
@@ -29,13 +28,7 @@ namespace camera
 
   private:
     struct Impl;
-    void Run();
-
-    utils::Channel<CameraFrame> frames_;
     std::unique_ptr<Impl> impl_;
-    std::thread worker_;
-    int width_;
-    int height_;
   };
 } // namespace camera
 

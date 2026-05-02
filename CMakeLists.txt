@@ -6,6 +6,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(OpenCV REQUIRED)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GSTREAMER REQUIRED IMPORTED_TARGET gstreamer-1.0)
+pkg_check_modules(GSTREAMER_APP REQUIRED IMPORTED_TARGET gstreamer-app-1.0)
+pkg_check_modules(GSTREAMER_VIDEO REQUIRED IMPORTED_TARGET gstreamer-video-1.0)
 
 add_executable(rl_face_tracker
   src/app/app.cpp
@@ -17,6 +21,12 @@ add_executable(rl_face_tracker
 target_include_directories(rl_face_tracker PRIVATE
   src
   third_party
+)
+
+target_link_libraries(rl_face_tracker PRIVATE
+  PkgConfig::GSTREAMER
+  PkgConfig::GSTREAMER_APP
+  PkgConfig::GSTREAMER_VIDEO
 )
 
 if (TARGET opencv_core)
@@ -32,7 +42,6 @@ find_package(raylib QUIET)
 if (raylib_FOUND)
   target_link_libraries(rl_face_tracker PRIVATE raylib)
 else()
-  find_package(PkgConfig REQUIRED)
   pkg_check_modules(RAYLIB REQUIRED IMPORTED_TARGET raylib)
   target_link_libraries(rl_face_tracker PRIVATE PkgConfig::RAYLIB)
 endif()
