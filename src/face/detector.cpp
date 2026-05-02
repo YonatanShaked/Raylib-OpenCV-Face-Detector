@@ -1,8 +1,10 @@
 #include "face/detector.h"
 #include "utils/asset_paths.h"
 #include <algorithm>
+#include <atomic>
 #include <opencv2/face.hpp>
 #include <opencv2/opencv.hpp>
+#include <thread>
 
 namespace
 {
@@ -244,20 +246,32 @@ namespace face
 {
   struct FaceDetector::Impl
   {
-    explicit Impl(int image_width, int image_height, int max_faces, int detect_every_n_frames, int downscale)
-      : face_(utils::AssetPath("haarcascade_frontalface_default.xml").string(), utils::AssetPath("lbfmodel.yaml").string(), image_width, image_height, max_faces, detect_every_n_frames, downscale)
+    Impl(utils::Channel<camera::CameraFrame>& input, int image_width, int image_height, int max_faces, int detect_every_n_frames, int downscale)
+      : input(input)
+      , frames(2)
+      , face(utils::AssetPath("haarcascade_frontalface_default.xml").string(), utils::AssetPath("lbfmodel.yaml").string(), image_width, image_height, max_faces, detect_every_n_frames, downscale)
+      , enabled(true)
+      , worker(&Impl::Run, this)
     {
     }
 
-    FaceCV face_;
+    ~Impl()
+    {
+      Stop();
+    }
+
+    void Run();
+    void Stop();
+
+    utils::Channel<camera::CameraFrame>& input;
+    utils::Channel<FaceFrame> frames;
+    FaceCV face;
+    std::atomic<bool> enabled;
+    std::thread worker;
   };
 
   FaceDetector::FaceDetector(utils::Channel<camera::CameraFrame>& input, int image_width, int image_height, int max_faces, int detect_every_n_frames, int downscale)
-    : input_(input)
-    , frames_(2)
-    , impl_(std::make_unique<Impl>(image_width, image_height, max_faces, detect_every_n_frames, downscale))
-    , enabled_(true)
-    , worker_(&FaceDetector::Run, this)
+    : impl_(std::make_unique<Impl>(input, image_width, image_height, max_faces, detect_every_n_frames, downscale))
   {
   }
 
@@ -268,44 +282,50 @@ namespace face
 
   const utils::CameraIntrinsics& FaceDetector::CameraIntrinsics() const
   {
-    return impl_->face_.CameraIntrinsics();
+    return impl_->face.CameraIntrinsics();
   }
 
   utils::Channel<FaceFrame>& FaceDetector::Frames()
   {
-    return frames_;
+    return impl_->frames;
   }
 
   void FaceDetector::SetEnabled(bool enabled)
   {
-    enabled_.store(enabled);
+    impl_->enabled.store(enabled);
   }
 
   void FaceDetector::Stop()
   {
-    input_.Close();
-    frames_.Close();
-
-    if (worker_.joinable())
-      worker_.join();
+    if (impl_)
+      impl_->Stop();
   }
 
-  void FaceDetector::Run()
+  void FaceDetector::Impl::Stop()
+  {
+    input.Close();
+    frames.Close();
+
+    if (worker.joinable())
+      worker.join();
+  }
+
+  void FaceDetector::Impl::Run()
   {
     camera::CameraFrame in;
 
-    while (input_.Recv(in))
+    while (input.Recv(in))
     {
       FaceFrame out;
       out.camera = std::move(in);
 
-      if (enabled_.load())
-        out.result = impl_->face_.Process(out.camera.bgr);
+      if (enabled.load())
+        out.result = face.Process(out.camera.bgr);
 
-      if (!frames_.Send(std::move(out)))
+      if (!frames.Send(std::move(out)))
         break;
     }
 
-    frames_.Close();
+    frames.Close();
   }
 } // namespace face

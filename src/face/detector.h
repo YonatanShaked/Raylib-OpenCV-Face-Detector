@@ -4,9 +4,7 @@
 #include "camera/handler.h"
 #include "utils/channel.h"
 #include "utils/vision_types.h"
-#include <atomic>
 #include <memory>
-#include <thread>
 #include <vector>
 
 namespace face
@@ -44,13 +42,7 @@ namespace face
 
   private:
     struct Impl;
-    void Run();
-
-    utils::Channel<camera::CameraFrame>& input_;
-    utils::Channel<FaceFrame> frames_;
     std::unique_ptr<Impl> impl_;
-    std::atomic<bool> enabled_;
-    std::thread worker_;
   };
 } // namespace face
 
