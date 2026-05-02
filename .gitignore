@@ -25,7 +25,12 @@ compile_commands.json
 *.swo
 *.user
 
+# Caches and envs
 .cache
+.venv
+venv
+env
+__pycache__
 
 # OS junk
 .DS_Store
